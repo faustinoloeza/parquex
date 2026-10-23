@@ -11,6 +11,7 @@ import { createSidebar } from './ui/sidebar/index.js';
 import { createToolbar } from './ui/toolbar.js';
 import { createAttribution } from './ui/attribution.js';
 import { createLoadingScreen } from './ui/loading-screen.js';
+import { createDisclaimer } from './ui/disclaimer.js';
 import { createStatsOverlay } from './ui/stats-overlay.js';
 import { createDirections } from './ui/directions.js';
 import { Navigation } from './app/navigation.js';
@@ -32,6 +33,7 @@ async function boot() {
 
   let t = translator(lang);
   const loading = createLoadingScreen(root, t);
+  const disclaimer = createDisclaimer(root, () => t);
   const navigate = (park, language) => {
     location.href = routeUrl(park, language);
   };
@@ -134,6 +136,7 @@ async function boot() {
       onFilter: (filter) => app.applyFilter(filter),
       onFocusRoute: (slug) => app.focusRoute(slug),
       onDirections: (poi) => navigation.directions(poi),
+      onAbout: () => disclaimer.open({ force: true }),
     });
     // on desktop the map is centered in the area next to the sidebar
     sidebar.toggle(sidebarOpen);
@@ -171,6 +174,8 @@ async function boot() {
 
   app.start({ frames: debug.still ? 4 : Infinity });
   loading.done();
+  // unofficial-site notice, once per device (not over screenshots)
+  if (!debug.still) disclaimer.open();
   window.__app = app; // handy for debugging from the console
   window.__nav = navigation;
 }

@@ -26,7 +26,7 @@ import { renderHoursPane } from './hours-pane.js';
  * @param {(slug: string | null) => void} options.onFocusRoute
  * @param {(poi: object) => void} [options.onDirections]  walking directions to an activity ("Go" buttons)
  */
-export function createSidebar(root, { park, lang, t, onSelect, onFilter, onFocusRoute, onDirections }) {
+export function createSidebar(root, { park, lang, t, onSelect, onFilter, onFocusRoute, onDirections, onAbout }) {
   const L = (value) => localized(value, lang);
   const pois = park.pois.filter((p) => p.active);
   const categoryOf = (p) => p.category.es ?? 'Otros';
@@ -68,10 +68,12 @@ export function createSidebar(root, { park, lang, t, onSelect, onFilter, onFocus
       <section class="sb-pane" data-pane="hours" hidden></section>
     </div>
     <footer class="sb-foot">
+      ${onAbout ? `<button type="button" class="disclaimer-link" data-about>${t('disclaimerLink')}</button>` : ''}
       <small>${t('credits')}</small>
     </footer>`;
   root.appendChild(el);
   const pane = (name) => el.querySelector(`[data-pane="${name}"]`);
+  el.querySelector('[data-about]')?.addEventListener('click', () => onAbout());
 
   // -------------------------------------------------------------- filtering
   let routes = null;

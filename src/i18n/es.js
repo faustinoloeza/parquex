@@ -56,6 +56,16 @@ export default {
   time_day: 'Día',
   time_night: 'Noche',
   credits: 'Datos: Grupo Xcaret, OpenStreetMap, rivieramaya.mx',
+  // unofficial-site notice (ui/disclaimer.js)
+  disclaimerEyebrow: 'Sitio no oficial',
+  disclaimerTitle: 'Este mapa no es oficial',
+  disclaimerBody: 'Es un proyecto independiente: no está afiliado, patrocinado ni avalado por Grupo Xcaret ni por sus parques.',
+  disclaimerData:
+    'Actividades, horarios, rutas y servicios se muestran solo como referencia y pueden no estar al día. Los modelos 3D son una interpretación aproximada de los parques.',
+  disclaimerOfficial: 'Para información oficial, precios y reservaciones visita',
+  disclaimerOk: 'Entendido, explorar el mapa',
+  disclaimerTrademarks: 'Xcaret, Xel-Há, Xplor, Xenses y Xoximilco son marcas de sus respectivos titulares.',
+  disclaimerLink: 'Aviso: sitio no oficial',
   // walking navigation (shared/nav-graph.js, shared/navigation.js, ui/directions.js)
   nav_directions: 'Cómo llegar',
   nav_go: 'Ir',
