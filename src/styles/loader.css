@@ -1,0 +1,56 @@
+/* ------------------------------------------------------------------ loader */
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: radial-gradient(circle at 50% 45%, #ffffff 0%, #dde8ee 70%);
+  color: var(--navy);
+  font-weight: 600;
+  transition: opacity 0.5s;
+}
+
+.loader.done {
+  opacity: 0;
+  pointer-events: none;
+}
+.loader p {
+  margin: 0;
+}
+.loader-error {
+  color: #b3261e;
+}
+
+.loader-ring {
+  width: 54px;
+  height: 54px;
+  border: 5px solid #76d1ff55;
+  border-top-color: var(--navy);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+.loader-bar {
+  width: 180px;
+  height: 4px;
+  border-radius: 4px;
+  background: #10273422;
+  overflow: hidden;
+}
+.loader-bar span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--navy);
+  transition: width 0.3s;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

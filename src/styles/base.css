@@ -1,0 +1,61 @@
+/* Layout follows the official map (maps.xcaret.com); the top bar, markers and
+   map buttons follow the Android app (Parquex, ui/theme/Color.kt). */
+:root {
+  --navy: #102734;
+  --sky: #76d1ff;
+  /* Android app palette */
+  --teal: #0e7c86;
+  --teal-container: #b8ecee;
+  --sunset: #f08a24;
+  --ink: #1f2a2e;
+  --panel: #fffffff5; /* white at 96 % */
+  /* Material 3 elevation shadows (≈ 3 dp and 6 dp) */
+  --elev-3: 0 1px 3px #0000004d, 0 2px 6px 2px #00000026;
+  --elev-6: 0 1px 3px #0000004d, 0 4px 8px 3px #00000026;
+  /* safe areas (notch, home indicator) */
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  /* floating top bar: 12 px margin + 44 px buttons; panels start below it */
+  --topbar-bottom: calc(var(--safe-t) + 56px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #dde8ee;
+  font-family:
+    Montserrat,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root,
+.gx-map-container {
+  position: fixed;
+  inset: 0;
+}
+
+.gx-map-container canvas {
+  display: block;
+  outline: none;
+  touch-action: none;
+}
+
+.labels-layer {
+  position: absolute !important;
+  inset: 0;
+  pointer-events: none;
+}

@@ -1,0 +1,92 @@
+/* ------------------------------------------------------------- map tools */
+.map-tools {
+  position: absolute;
+  right: calc(var(--safe-r) + 12px);
+  bottom: calc(var(--safe-b) + 28px);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Android app map controls: 48 px white buttons, zoom ± in one pill */
+.map-tools button {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: var(--elev-3);
+  cursor: pointer;
+}
+.map-tools .zoom-pair {
+  display: flex;
+  flex-direction: column;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: var(--elev-3);
+}
+.map-tools .zoom-pair button {
+  background: transparent;
+  box-shadow: none;
+}
+
+.map-tools button:hover {
+  background: #f1f4f5;
+}
+.map-tools button:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+.map-tools svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.map-tools .compass svg {
+  width: 26px;
+  height: 26px;
+  transition: transform 0.1s linear;
+}
+
+/* debug overlay (?stats) */
+.stats {
+  position: absolute;
+  z-index: 30;
+  right: 70px;
+  bottom: 24px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #102734d9;
+  color: #76d1ff;
+  font:
+    600 12px/1 ui-monospace,
+    monospace;
+}
+
+/* credit line of the real map (tile license) */
+.map-attribution {
+  position: absolute;
+  right: var(--safe-r);
+  bottom: var(--safe-b);
+  z-index: 5;
+  padding: 2px 8px;
+  border-top-left-radius: 6px;
+  background: #ffffffcc;
+  font-size: 11px;
+  line-height: 16px;
+}
+.map-attribution a {
+  color: #333;
+  text-decoration: none;
+}
+.map-attribution a:hover {
+  text-decoration: underline;
+}

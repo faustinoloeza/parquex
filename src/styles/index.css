@@ -1,0 +1,9 @@
+/* Styles by component. Layout, header and markers follow the official map
+   (maps.xcaret.com). The import order is the cascade order. */
+@import './base.css';
+@import './header.css';
+@import './markers.css';
+@import './controls.css';
+@import './loader.css';
+@import './sidebar.css';
+@import './navigation.css';

@@ -1,0 +1,195 @@
+/* ----------------------------------------------------------------- top bar
+   Floating and compact, as in the Android app (ParkMapScreen.kt → TopBar):
+   a 44 px pill with the park name · hours (park switcher) and a 44 px round
+   settings button, 12 px from the edges plus the safe areas. */
+.topbar {
+  position: absolute;
+  z-index: 6;
+  top: calc(var(--safe-t) + 12px);
+  left: calc(var(--safe-l) + 12px);
+  right: calc(var(--safe-r) + 12px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none; /* only the buttons take clicks; the map stays draggable in between */
+}
+.topbar > * {
+  pointer-events: auto;
+}
+
+.tb-anchor {
+  position: relative;
+  min-width: 0;
+}
+.tb-settings {
+  margin-left: auto;
+}
+
+.tb-pill,
+.tb-round {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: var(--panel);
+  box-shadow: var(--elev-3);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.tb-pill:hover,
+.tb-round:hover {
+  background: #f3f6f7;
+}
+.tb-pill:focus-visible,
+.tb-round:focus-visible,
+.menu button:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.tb-round {
+  flex: none;
+  width: 44px;
+  justify-content: center;
+  padding: 0;
+}
+.tb-round svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.tb-round circle {
+  fill: #fff;
+  stroke-width: 1.8;
+}
+.tb-list[aria-pressed='true'] {
+  background: var(--teal-container);
+}
+
+.tb-pill {
+  max-width: 100%;
+  padding: 0 10px 0 16px;
+  white-space: nowrap;
+}
+.tb-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.tb-dot {
+  flex: none;
+  width: 3px;
+  height: 3px;
+  margin: 0 8px;
+  border-radius: 50%;
+  background: #1f2a2e59; /* ink at 35 % */
+}
+.tb-hours {
+  flex: none;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: #1f2a2e9e; /* ink at 62 % */
+}
+.tb-chevron {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-left: 4px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.2s;
+}
+.tb-pill[aria-expanded='true'] .tb-chevron {
+  transform: rotate(180deg);
+}
+
+/* ------------------------------------------------- drop-down menus (M3 menu) */
+.menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  min-width: 180px;
+  max-width: min(280px, calc(100vw - 24px));
+  max-height: calc(100dvh - var(--topbar-bottom) - 16px);
+  overflow-y: auto;
+  padding: 8px 0;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: var(--elev-3);
+  color: var(--ink);
+}
+.menu-start {
+  left: 0;
+}
+.menu-end {
+  right: 0;
+}
+.menu-title {
+  padding: 10px 12px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #1f2a2e99;
+}
+.menu-title:not(:first-child) {
+  margin-top: 4px;
+  border-top: 1px solid #1f2a2e1f;
+}
+.menu button {
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.menu button:hover,
+.menu button:focus-visible {
+  background: #1f2a2e14;
+}
+.menu button:focus-visible {
+  outline-offset: -2px;
+}
+.menu button[aria-checked='true'] {
+  font-weight: 700;
+}
+.menu button span {
+  flex: 1;
+}
+.menu svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--teal);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 340px) {
+  .tb-dot,
+  .tb-hours {
+    display: none;
+  }
+}

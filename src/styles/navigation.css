@@ -1,0 +1,647 @@
+/* --------------------------------------------------- walking navigation
+   ui/directions.js (panels) and layers/nav-route.js (walker, destination pin).
+   html.gx-nav-preview / html.gx-nav-active are set while it runs (main.js). */
+:root {
+  --nav-blue: #1a73e8;
+  --nav-green: #0d7a4a;
+}
+
+.nav-panel[hidden],
+.nav-top[hidden],
+.nav-bottom[hidden],
+.nav-recenter[hidden],
+.nav-toast[hidden] {
+  display: none;
+}
+
+/* the sidebar (and in guidance the top bar) make room for the directions */
+.gx-nav-preview .sidebar,
+.gx-nav-active .sidebar,
+.gx-nav-active .topbar {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.nav-panel {
+  position: absolute;
+  z-index: 7;
+  top: calc(var(--topbar-bottom) + 10px);
+  left: calc(var(--safe-l) + 12px);
+  width: 360px;
+  max-height: calc(100% - var(--topbar-bottom) - 22px - var(--safe-b));
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  background: #fffffff5;
+  backdrop-filter: blur(10px);
+  box-shadow:
+    0 10px 30px #10273433,
+    0 1px 3px #10273422;
+  color: var(--ink);
+  font-size: 14px;
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+}
+.nav-panel svg,
+.nav-top svg,
+.nav-recenter svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.np-handle {
+  display: none;
+}
+.np-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 12px 8px 16px;
+}
+.np-num {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 1px 3px #0000004d;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+.np-num.is-extra {
+  background: var(--sunset);
+}
+.np-dest {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.np-dest small {
+  color: #6b7b86;
+  font-size: 12px;
+  font-weight: 600;
+}
+.np-dest b {
+  font-size: 17px;
+  line-height: 1.25;
+}
+.np-close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: #10273410;
+  color: inherit;
+  cursor: pointer;
+}
+.np-close svg {
+  width: 18px;
+  height: 18px;
+}
+.np-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 2px 16px 8px;
+}
+.np-time {
+  color: var(--nav-green);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.np-dist {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #4b5b66;
+  font-weight: 600;
+}
+.np-dist svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 2;
+}
+.np-from {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 16px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #1a73e80f;
+  font-size: 13px;
+}
+.np-from-text {
+  flex: 1;
+  min-width: 0;
+}
+.np-from-dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--nav-blue);
+  box-shadow: 0 0 0 1px #1a73e855;
+}
+.np-from-dot.is-sim {
+  background: #fff;
+  border: 3px solid var(--nav-blue);
+}
+.nav-panel .link {
+  flex: none;
+  padding: 4px 2px;
+  border: 0;
+  background: none;
+  color: var(--nav-blue);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.np-note {
+  margin: 8px 16px 0;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: #fef3c7;
+  color: #7c4a03;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.np-note.is-info {
+  background: #e8f0fe;
+  color: #174ea6;
+}
+.np-actions {
+  display: flex;
+  gap: 8px;
+  padding: 14px 16px 6px;
+}
+.np-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 99px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.np-start {
+  flex: 1;
+  border: 0;
+  background: var(--nav-blue);
+  color: #fff;
+  box-shadow: 0 1px 3px #0000004d;
+}
+.np-start svg {
+  width: 18px;
+  height: 18px;
+}
+.np-start:hover {
+  background: #1765cc;
+}
+.np-sim {
+  border: 1.5px solid #10273433;
+  background: #fff;
+  color: var(--nav-blue);
+}
+.np-actions button:focus-visible,
+.np-close:focus-visible,
+.nav-panel .link:focus-visible {
+  outline: 2px solid var(--nav-blue);
+  outline-offset: 2px;
+}
+.np-steps-title {
+  margin: 12px 16px 4px;
+  color: #6b7b86;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.np-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0 8px 12px;
+}
+.np-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px;
+  border-bottom: 1px solid #10273410;
+}
+.np-step:last-child {
+  border-bottom: 0;
+}
+.np-step-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  color: #3c4a54;
+}
+.np-step-icon svg {
+  width: 24px;
+  height: 24px;
+}
+.np-step.is-arrive .np-step-icon {
+  color: #d93025;
+}
+.np-step-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-top: 5px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.np-step-text small {
+  margin-top: 2px;
+  color: #6b7b86;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* guidance: instruction banner on top, summary bar at the bottom */
+.nav-top {
+  position: absolute;
+  z-index: 8;
+  top: calc(var(--safe-t) + 12px);
+  left: 50%;
+  width: min(560px, calc(100% - 24px));
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: var(--nav-green);
+  box-shadow: var(--elev-6);
+  color: #fff;
+  transform: translateX(-50%);
+}
+.nav-top.is-arrived {
+  background: var(--nav-blue);
+}
+.nt-icon svg {
+  display: block;
+  width: 40px;
+  height: 40px;
+  stroke-width: 2.6;
+}
+.nt-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nt-text b {
+  font-size: 21px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.nt-text small {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+.nav-bottom {
+  position: absolute;
+  z-index: 8;
+  left: 50%;
+  bottom: calc(var(--safe-b) + 16px);
+  width: min(560px, calc(100% - 24px));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px 10px 18px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: var(--elev-6);
+  color: var(--ink);
+  transform: translateX(-50%);
+}
+.nb-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 8px;
+}
+.nb-time {
+  color: var(--nav-green);
+  font-size: 20px;
+  font-weight: 800;
+}
+.nb-dist {
+  color: #4b5b66;
+  font-weight: 600;
+}
+.nb-sim {
+  padding: 1px 8px;
+  border-radius: 99px;
+  background: #e8f0fe;
+  color: #174ea6;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+}
+.nb-speed {
+  display: flex;
+  padding: 3px;
+  border-radius: 99px;
+  background: #10273410;
+}
+.nb-speed button {
+  min-width: 40px;
+  height: 32px;
+  border: 0;
+  border-radius: 99px;
+  background: none;
+  color: #3c4a54;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.nb-speed button[aria-pressed='true'] {
+  background: #fff;
+  color: var(--nav-blue);
+  box-shadow: 0 1px 2px #0000003d;
+}
+.nb-end {
+  height: 42px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 99px;
+  background: #d93025;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.nav-bottom button:focus-visible,
+.nav-recenter:focus-visible,
+.nav-toast button:focus-visible {
+  outline: 2px solid var(--nav-blue);
+  outline-offset: 2px;
+}
+.nav-recenter {
+  position: absolute;
+  z-index: 8;
+  left: 50%;
+  bottom: calc(var(--safe-b) + 92px);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 16px 0 12px;
+  border: 0;
+  border-radius: 99px;
+  background: #fff;
+  box-shadow: var(--elev-3);
+  color: var(--nav-blue);
+  font: inherit;
+  font-weight: 700;
+  transform: translateX(-50%);
+  cursor: pointer;
+}
+.nav-recenter svg {
+  width: 18px;
+  height: 18px;
+}
+.gx-nav-active .map-tools {
+  bottom: calc(var(--safe-b) + 92px);
+}
+
+/* "tap the map to choose the start" */
+.nav-toast {
+  position: absolute;
+  z-index: 9;
+  top: calc(var(--topbar-bottom) + 10px);
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100% - 24px);
+  padding: 10px 10px 10px 16px;
+  border-radius: 99px;
+  background: #202124;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: var(--elev-6);
+  transform: translateX(-50%);
+}
+.nav-toast button {
+  flex: none;
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 99px;
+  background: #ffffff26;
+  color: #8ab4f8;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.gx-nav-picking .gx-map-container canvas {
+  cursor: crosshair;
+}
+
+/* walker: blue dot, accuracy halo, heading cone (layers/nav-route.js) */
+.nav-me {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.nav-me > div {
+  position: absolute;
+}
+.nav-me-dot {
+  left: -11px;
+  top: -11px;
+  width: 22px;
+  height: 22px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--nav-blue);
+  box-shadow: 0 1px 4px #0006;
+}
+.nav-me.is-sim .nav-me-dot {
+  box-shadow:
+    0 0 0 3px #1a73e840,
+    0 1px 4px #0006;
+}
+.nav-me-halo {
+  --halo: 0px;
+  left: calc(var(--halo) / -2);
+  top: calc(var(--halo) / -2);
+  width: var(--halo);
+  height: var(--halo);
+  border: 1px solid #1a73e866;
+  border-radius: 50%;
+  background: #1a73e826;
+}
+.nav-me-cone {
+  display: none;
+  left: -32px;
+  top: -64px;
+  width: 64px;
+  height: 64px;
+  background: radial-gradient(circle at 50% 100%, #1a73e8 0, #1a73e888 40%, #1a73e800 75%);
+  clip-path: polygon(50% 100%, 6% 0, 94% 0);
+  transform: rotate(var(--heading, 0deg));
+  transform-origin: 50% 100%;
+}
+.nav-me.has-heading .nav-me-cone {
+  display: block;
+}
+.nav-dest {
+  position: absolute;
+  left: -15px;
+  bottom: 0;
+  width: 30px;
+  height: 42px;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 2px #0005);
+}
+.nav-dest svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.nav-dest path {
+  fill: #ea4335;
+  stroke: #a50e0e;
+  stroke-width: 1;
+}
+.nav-dest circle {
+  fill: #a50e0e;
+}
+
+@media (max-width: 640px) {
+  /* bottom sheet */
+  .nav-panel {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-height: 56vh;
+    padding-bottom: var(--safe-b);
+    border-radius: 18px 18px 0 0;
+  }
+  .np-handle {
+    display: block;
+    flex: none;
+    width: 44px;
+    height: 5px;
+    margin: 8px auto 0;
+    border-radius: 9px;
+    background: #10273433;
+  }
+  .np-head {
+    padding-top: 8px;
+  }
+  .gx-nav-preview .map-tools {
+    display: none;
+  }
+  .nav-top {
+    top: calc(var(--safe-t) + 8px);
+    width: calc(100% - 16px);
+    padding: 12px 14px;
+  }
+  .nt-text b {
+    font-size: 19px;
+  }
+  .nav-bottom {
+    bottom: calc(var(--safe-b) + 8px);
+    width: calc(100% - 16px);
+    flex-wrap: wrap;
+    padding-left: 14px;
+  }
+  .nb-speed button {
+    min-width: 34px;
+  }
+  .gx-nav-active .map-tools {
+    display: none;
+  }
+  .nav-recenter {
+    bottom: calc(var(--safe-b) + 96px);
+  }
+  .nav-toast {
+    top: calc(var(--safe-t) + 66px);
+  }
+}
+
+/* night: dark panels like the activity card */
+.gx-night .nav-panel,
+.gx-night .nav-bottom {
+  background: #1b2440f5;
+  color: #f1f3f9;
+}
+.gx-night .np-dest small,
+.gx-night .np-step-text small,
+.gx-night .np-steps-title,
+.gx-night .np-dist,
+.gx-night .nb-dist {
+  color: #f1f3f9b3;
+}
+.gx-night .np-step-icon {
+  color: #dfe5f5;
+}
+.gx-night .np-time,
+.gx-night .nb-time {
+  color: #81c995;
+}
+.gx-night .np-from {
+  background: #5b9cff1f;
+}
+.gx-night .np-sim {
+  border-color: #f1f3f93d;
+  background: transparent;
+  color: #8ab4f8;
+}
+.gx-night .nav-panel .link {
+  color: #8ab4f8;
+}
+.gx-night .np-close,
+.gx-night .nb-speed {
+  background: #ffffff1a;
+}
+.gx-night .nb-speed button {
+  color: #dfe5f5;
+}
+.gx-night .nb-speed button[aria-pressed='true'] {
+  background: #f1f3f9;
+  color: var(--nav-blue);
+}
+.gx-night .np-step {
+  border-color: #ffffff14;
+}
+.gx-night .nav-me-dot {
+  box-shadow:
+    0 0 0 3px #5b9cff55,
+    0 0 12px #5b9cffaa;
+}
