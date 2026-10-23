@@ -9,9 +9,12 @@ Xplor, Xenses y Xoximilco no tienen mapa ilustrado oficial: su suelo sale de la 
 (_modo satélite_, ver [Agregar un parque](docs/agregar-parque.md)).
 
 ```
-pnpm install
-pnpm dev            # http://localhost:5173/xc/es
+npm install
+npm run dev         # http://localhost:5173/xc/es
 ```
+
+Los comandos de abajo se escriben `pnpm <script>`; con npm son `npm run <script>` (y los argumentos que empiezan
+con `-` van después de `--`, por ejemplo `npm run export:glb -- xc --trees=both`).
 
 ## Estructura
 
@@ -62,6 +65,14 @@ Parámetros de depuración en la URL: `?stats` (FPS, draw calls, triángulos y m
 como suelo; requiere `data/raw`), `?view=x,z,distancia,polar,azimut` (cámara inicial en metros y grados, para
 capturas repetibles), `?noneighbors` (sin los parques vecinos, para comparar), `?night` / `?day` (fuerza la
 noche o el día sin guardar la preferencia, para capturas).
+
+## Publicación en Cloudflare Workers
+
+`wrangler.jsonc` publica el sitio compilado (`dist/`) como un Worker de solo archivos estáticos; las rutas que no
+son archivos (`/xc/es`, `/xh/en`…) responden con `index.html` (`not_found_handling: single-page-application`) y
+la app lee la ruta. Con el repositorio conectado en Cloudflare (**Workers & Pages → el Worker → Settings →
+Builds**): comando de compilación **`npm run build`**, comando de implementación **`npx wrangler deploy`**,
+directorio raíz vacío. Se sirve en la raíz del dominio (`base` `/`), así que no hace falta `BASE_PATH`.
 
 ## Publicación en GitHub Pages
 
