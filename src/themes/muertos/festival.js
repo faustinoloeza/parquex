@@ -2,10 +2,22 @@
 // comes from (pipeline/fetch-festival.js → public/parks/xc/festival.json) and
 // how the map reads it — the day to show, its sessions by time, its places.
 import { PARK_UTC_OFFSET } from '../../app/time-of-day.js';
+import { LOCALES } from '../../i18n/index.js';
 
 export const FESTIVAL = {
   park: 'xc',
-  name: { es: 'Festival de Vida y Muerte', en: 'Life and Death Festival' },
+  name: {
+    es: 'Festival de Vida y Muerte',
+    en: 'Life and Death Festival',
+    zh: '生与死节',
+    ja: '生と死の祭典',
+    fr: 'Festival de la Vie et de la Mort',
+    pt: 'Festival da Vida e da Morte',
+    ko: '삶과 죽음의 축제',
+    ar: 'مهرجان الحياة والموت',
+    it: 'Festival della Vita e della Morte',
+    hi: 'जीवन और मृत्यु उत्सव',
+  },
   eventCode: 'FTVYM_2026',
   // the festival site's own endpoint (POST { language, eventCode }); no CORS, so
   // only the pipeline asks it
@@ -77,6 +89,6 @@ export function placesOn(program, day) {
  */
 export function dayLabel(day, lang) {
   return new Date(`${day}T12:00:00Z`)
-    .toLocaleDateString(lang === 'en' ? 'en-US' : 'es-MX', { day: 'numeric', month: 'short', timeZone: 'UTC' })
+    .toLocaleDateString(LOCALES[lang] ?? 'es-MX', { day: 'numeric', month: 'short', timeZone: 'UTC' })
     .replace('.', '');
 }

@@ -158,9 +158,12 @@ export function walkerAt({ points, cum }, s) {
 /** Walking minutes for a distance (at least 1). */
 export const walkMinutes = (meters, speed = NAV.speed) => Math.max(1, Math.round(meters / speed / 60));
 
+/** Languages that write a decimal comma ("1,2 km"). */
+const DECIMAL_COMMA = new Set(['es', 'fr', 'pt', 'it']);
+
 /** "40 m", "350 m", "1.2 km" (rounded like a walking app: 5 m steps under 100 m, 10 m under 1 km). */
 export function formatDistance(m, lang = 'es') {
-  if (m >= 1000) return `${(m / 1000).toFixed(1).replace('.', lang === 'es' ? ',' : '.')} km`;
+  if (m >= 1000) return `${(m / 1000).toFixed(1).replace('.', DECIMAL_COMMA.has(lang) ? ',' : '.')} km`;
   const step = m < 100 ? 5 : 10;
   return `${Math.max(step, Math.round(m / step) * step)} m`;
 }

@@ -1,15 +1,23 @@
 import { esc } from './dom.js';
 
 const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
+const CHEVRON = '<svg class="menu-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>';
+
+/**
+ * @typedef {{ label: string, checked?: boolean, onSelect: () => void }} MenuChoice
+ * @typedef {{ title: string }} MenuTitle
+ * @typedef {{ group: string, items: MenuChoice[] }} MenuGroup  a collapsible section that shows its checked choice
+ */
 
 /**
  * Drop-down menu attached to a button (Material 3 style, like the Android app):
- * radio items with a check mark, optional section titles. Keyboard: Enter/Space/
- * ArrowDown open it, arrows/Home/End move, Escape/Tab close it.
+ * radio items with a check mark, optional section titles, or collapsible
+ * groups (one open at a time: a heading with the current choice that unfolds
+ * its options), which keep a long menu short. Keyboard: Enter/Space/ArrowDown
+ * open it, arrows/Home/End move, Escape/Tab close it.
  *
  * @param {HTMLButtonElement} button  the trigger (gets aria-haspopup / aria-expanded)
- * @param {() => Array<{ title: string } | { label: string, checked?: boolean, onSelect: () => void }>} items
- *        built each time the menu opens
+ * @param {() => Array<MenuTitle | MenuChoice | MenuGroup>} items  built each time the menu opens
  * @param {{ align?: 'start' | 'end', label?: string }} [options]
  */
 export function attachMenu(button, items, { align = 'start', label } = {}) {
@@ -23,10 +31,26 @@ export function attachMenu(button, items, { align = 'start', label } = {}) {
   button.setAttribute('aria-expanded', 'false');
 
   let actions = [];
-  const entries = () => [...menu.querySelectorAll('[role^="menuitem"]')];
+  // the items of a closed group are hidden: arrows skip them
+  const entries = () => [...menu.querySelectorAll('[role^="menuitem"]')].filter((b) => !b.closest('[hidden]'));
   const focusAt = (i) => {
     const list = entries();
     list[(i + list.length) % list.length]?.focus();
+  };
+
+  const choice = (item) => {
+    actions.push(item.onSelect);
+    return `<button type="button" role="menuitemradio" aria-checked="${Boolean(item.checked)}" data-i="${actions.length - 1}" tabindex="-1">
+        <span>${esc(item.label)}</span>${item.checked ? CHECK : ''}</button>`;
+  };
+  /** Opens one group and closes the others (or closes it when it was open). */
+  const toggleGroup = (head) => {
+    const open = head.getAttribute('aria-expanded') !== 'true';
+    for (const h of menu.querySelectorAll('.menu-group-head')) {
+      const on = open && h === head;
+      h.setAttribute('aria-expanded', String(on));
+      h.nextElementSibling.hidden = !on;
+    }
   };
 
   const onOutside = (e) => {
@@ -36,10 +60,16 @@ export function attachMenu(button, items, { align = 'start', label } = {}) {
     actions = [];
     menu.innerHTML = items()
       .map((item) => {
+        if ('group' in item) {
+          const current = item.items.find((c) => c.checked);
+          return `<div class="menu-group">
+            <button type="button" class="menu-group-head" role="menuitem" aria-expanded="false" tabindex="-1">
+              <span>${esc(item.group)}</span><small>${esc(current?.label ?? '')}</small>${CHEVRON}</button>
+            <div class="menu-group-items" role="group" aria-label="${esc(item.group)}" hidden>${item.items.map(choice).join('')}</div>
+          </div>`;
+        }
         if ('title' in item) return `<div class="menu-title" role="presentation">${esc(item.title)}</div>`;
-        actions.push(item.onSelect);
-        return `<button type="button" role="menuitemradio" aria-checked="${Boolean(item.checked)}" data-i="${actions.length - 1}" tabindex="-1">
-            <span>${esc(item.label)}</span>${item.checked ? CHECK : ''}</button>`;
+        return choice(item);
       })
       .join('');
     menu.hidden = false;
@@ -66,6 +96,8 @@ export function attachMenu(button, items, { align = 'start', label } = {}) {
     } else if (e.key === 'Escape') close();
   });
   menu.addEventListener('click', (e) => {
+    const head = e.target.closest('.menu-group-head');
+    if (head) return toggleGroup(head);
     const b = e.target.closest('[data-i]');
     if (!b) return;
     close(true);

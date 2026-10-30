@@ -1,5 +1,6 @@
 import { ICON } from './icons.js';
 import { esc, normalize } from './dom.js';
+import { localized } from '../i18n/index.js';
 import { dayLabel, festivalDay, parkDate, sessionsOn } from '../themes/muertos/festival.js';
 
 /**
@@ -17,9 +18,11 @@ import { dayLabel, festivalDay, parkDate, sessionsOn } from '../themes/muertos/f
  * @param {(key: string) => string} options.t
  * @param {(place: string, at: { x: number, z: number }, day: string) => void} options.onPlace
  * @param {(day: string) => void} [options.onDay]
+ * @param {{ title: string, place: string }[]} [options.altars]  the theme's altars on the map, listed after the program
+ * @param {(i: number) => void} [options.onAltar]
  */
-export function createFestivalPanel({ program, places, name, lang, t, onPlace, onDay }) {
-  const L = (v) => v?.[lang] || v?.es || '';
+export function createFestivalPanel({ program, places, name, lang, t, onPlace, onDay, altars = [], onAltar }) {
+  const L = (v) => localized(v, lang);
   const today = parkDate();
   let day = festivalDay(program.days);
   let query = '';
@@ -37,6 +40,18 @@ export function createFestivalPanel({ program, places, name, lang, t, onPlace, o
       .join('')}</div>
     <ol class="hours-list fest-list"></ol>
     <p class="sb-empty" hidden>${esc(t('noResults'))}</p>
+    ${
+      altars.length
+        ? `<h3 class="sheet-section">${esc(t('altars'))}</h3>
+    <ul class="hours-list">${altars
+      .map(
+        (a, i) => `<li><button type="button" class="poi-row fest-row" data-altar="${i}">
+          <span class="fest-time">${ICON.altar}</span><span class="nm">${esc(a.title)}<small>${esc(a.place)}</small></span>
+        </button></li>`,
+      )
+      .join('')}</ul>`
+        : ''
+    }
     <a class="fest-source" href="${esc(program.source)}" target="_blank" rel="noopener">${esc(t('festival_source'))}</a>`;
   const list = el.querySelector('.fest-list');
   const empty = el.querySelector('.sb-empty');
@@ -66,6 +81,10 @@ export function createFestivalPanel({ program, places, name, lang, t, onPlace, o
     for (const b of el.querySelectorAll('[data-day]')) b.setAttribute('aria-selected', String(b === tab));
     render();
     onDay?.(day);
+  });
+  el.addEventListener('click', (e) => {
+    const altar = e.target.closest('[data-altar]');
+    if (altar) onAltar?.(+altar.dataset.altar);
   });
   list.addEventListener('click', (e) => {
     const row = rows[+e.target.closest('[data-i]')?.dataset.i];

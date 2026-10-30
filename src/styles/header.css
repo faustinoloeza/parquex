@@ -187,6 +187,46 @@
   stroke-linejoin: round;
 }
 
+/* collapsible groups (settings): a heading with the current choice, its options below */
+.menu-group + .menu-group {
+  border-top: 1px solid #1f2a2e1f;
+}
+.menu .menu-group-head {
+  gap: 8px;
+  padding-right: 10px;
+}
+.menu-group-head span {
+  font-weight: 700;
+}
+.menu-group-head small {
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: #1f2a2e99;
+}
+.menu .menu-chevron {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  opacity: 0.6;
+  transition: transform 0.2s;
+}
+.menu-group-head[aria-expanded='true'] .menu-chevron {
+  transform: rotate(180deg);
+}
+.menu-group-items {
+  padding-bottom: 4px;
+  background: #1f2a2e08;
+}
+.menu-group-items button {
+  height: 44px;
+  padding-inline-start: 24px;
+}
+
 @media (max-width: 340px) {
   .tb-dot,
   .tb-hours {
