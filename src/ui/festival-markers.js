@@ -11,7 +11,7 @@ import { sessionsOn } from '../themes/muertos/festival.js';
  * (place names that share a spot share the marker); selecting one opens a card
  * with its sessions. Hidden until show(true).
  *
- * @param {THREE.Scene} scene
+ * @param {THREE.Object3D} scene  where the markers go (Stage.labelRoot)
  * @param {object} options
  * @param {import('../themes/muertos/festival.js').FestivalProgram} options.program
  * @param {Record<string, { x: number, z: number } | null>} options.places

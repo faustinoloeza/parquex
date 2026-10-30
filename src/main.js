@@ -115,7 +115,9 @@ async function boot() {
   let festivalMarkers = null;
   // the theme's altars on the map (shown with the festival's places)
   let altarMarkers = null;
-  let festivalShown = true;
+  // on phones the festival's chip starts off (its markers, until chosen); on
+  // desktop, with no chip, they show from the start
+  let festivalShown = !matchMedia(MOBILE).matches;
   // the page side of a theme (festival program, altar markers: ui/theme-ui.js), loaded only while one shows
   let themeUI = null;
   const switchTheme = (next) => {
@@ -221,7 +223,7 @@ async function boot() {
     app.focusRoute(null);
     const altars = app.world.parkLayers.find((l) => l.theme)?.altars ?? [];
     if (altars.length) {
-      altarMarkers = themeUI.createAltarMarkers(app.stage.scene, {
+      altarMarkers = themeUI.createAltarMarkers(app.stage.labelRoot, {
         altars,
         lang,
         t,
@@ -240,7 +242,7 @@ async function boot() {
     let festivalPanel = null;
     if (festival) {
       const { program, places, info } = festival;
-      festivalMarkers = themeUI.createFestivalMarkers(app.stage.scene, {
+      festivalMarkers = themeUI.createFestivalMarkers(app.stage.labelRoot, {
         program,
         places,
         lang,

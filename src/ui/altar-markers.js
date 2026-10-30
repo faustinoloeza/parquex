@@ -9,7 +9,7 @@ import { localized } from '../i18n/index.js';
  * `altars`, src/themes/muertos/decorations.js): a small marker over each one
  * that opens a card with its style and place. Hidden until show(true).
  *
- * @param {THREE.Scene} scene
+ * @param {THREE.Object3D} scene  where the markers go (Stage.labelRoot)
  * @param {object} options
  * @param {{ x: number, z: number, style: string, place: string | { es: string, en: string } | null }[]} options.altars
  *        place: a festival place name, a { es, en } name, or 'entrance'
