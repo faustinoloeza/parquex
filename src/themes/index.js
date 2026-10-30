@@ -19,6 +19,7 @@ import muertos from './muertos/index.js';
  *           (src/themes/muertos/festival.js → FESTIVAL, plus `places`)
  * @property {(ctx: object) => Promise<import('../layers/index.js').Layer & { theme: string }>} [decorations]
  *           the theme's layer of the focused park (app/world.js → createParkLayers gives the context)
+ * @property {() => Promise<unknown>} [preload]  starts downloading the code of its decorations (main.js, at start)
  */
 
 /** Every theme by key, in the order 'auto' checks them. */

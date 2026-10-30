@@ -126,7 +126,9 @@ export class MapApp {
     this.world = await createWorld(this.stage, this.parkDef, assets, {
       neighbors: this.debug.neighbors !== false,
       load: { parkJson: (key) => this.parkJson(key), assets: (key) => this.liteAssets(key) },
-      theme: this.theme,
+      // the theme's decoration takes a second or more on phones: the map shows
+      // without it and addThemeDecoration() adds it (screenshots wait for it)
+      theme: this.debug.still ? this.theme : null,
     });
     const { heightAt, routes } = this.world;
     this.routeSlugOf = makeRouteLookup(this.park.routes);
@@ -415,6 +417,12 @@ export class MapApp {
       disposeObject(layer.object);
     }
     const layer = await this.world.decorate(theme);
+    // another theme, or another park, while it was being built: it is stale
+    if (layer && (this.theme !== theme || this.world.parkLayers !== parkLayers)) {
+      layer.dispose?.();
+      disposeObject(layer.object);
+      return;
+    }
     if (layer) {
       layer.setQuality?.(this.quality.preset);
       this.stage.addLayer(layer);
@@ -424,6 +432,17 @@ export class MapApp {
     this.world.layers = worldLayers(parkLayers, basemap, neighbors);
     this.quality.layers = this.world.layers;
     this.lastMove = performance.now();
+  }
+
+  /**
+   * Adds the theme's decoration of the focused park, left out of load() so the
+   * map shows without waiting for it; nothing when there is none or it is
+   * already there. Resolves to whether it added one.
+   */
+  async addThemeDecoration() {
+    if (!this.theme?.decorations || this.world.parkLayers.some((l) => l.theme)) return false;
+    await this.setTheme(this.theme);
+    return this.world.parkLayers.some((l) => l.theme);
   }
 
   updateNightTarget() {

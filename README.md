@@ -97,6 +97,10 @@ La compilación prepara el sitio para que el mapa abra lo antes posible (`pipeli
     parque) y los textos de su idioma (`src/i18n → loadLanguage`).
   - Bajo demanda: la navegación a pie (`src/app/walking.js`), al tocar "Ir" o "Cómo llegar"; la parte de
     página de un tema (`src/ui/theme-ui.js`) y su decoración 3D, solo mientras hay un tema.
+- **Temas de temporada:** su código y el programa del festival se piden al arrancar, en paralelo con los datos
+  del parque (no uno tras otro al final). La decoración (velas, flores, altares) no detiene la pantalla de
+  carga: el mapa abre igual que sin tema y ella aparece un momento después, cediendo al navegador entre pasos
+  (`MapApp → addThemeDecoration`). Con `?still` (capturas) se construye antes de mostrar el mapa.
 
 En 4G lento (3 Mbps, 150 ms), abrir Xcaret pasa de 1.4 MB a 0.95 MB descargados.
 
