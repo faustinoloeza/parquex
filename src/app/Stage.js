@@ -86,6 +86,11 @@ export class Stage {
     scene.background = new THREE.Color(LIGHTING.day.sky);
     scene.fog = new THREE.Fog(new THREE.Color(LIGHTING.day.sky), 600, 2400);
     this.scene = scene;
+    // HTML markers (CSS2DObject) live under this group: the label pass walks
+    // only it, not the hundreds of objects of the 3D scene
+    this.labelRoot = new THREE.Group();
+    this.labelRoot.name = 'labels';
+    scene.add(this.labelRoot);
 
     this.camera = new THREE.PerspectiveCamera(38, container.clientWidth / container.clientHeight, 2, 6000);
     this.frustum = new THREE.Frustum();
@@ -309,6 +314,6 @@ export class Stage {
   }
 
   renderLabels() {
-    this.labels.render(this.scene, this.camera);
+    this.labels.render(this.labelRoot, this.camera);
   }
 }

@@ -31,6 +31,9 @@ export const NAV_STYLE = {
 export function createNavRouteLayer() {
   const group = new THREE.Group();
   group.name = 'nav-route';
+  // its HTML markers (MapApp puts them under Stage.labelRoot)
+  const labels = new THREE.Group();
+  labels.name = 'nav-route:labels';
   const mat = (color, { dashed = false, opacity = 1 } = {}) =>
     new LineMaterial({
       color,
@@ -67,7 +70,7 @@ export function createNavRouteLayer() {
     anchor.appendChild(el);
     const obj = new CSS2DObject(anchor);
     obj.visible = false;
-    group.add(obj);
+    labels.add(obj);
     return { obj, el };
   };
   const me = marker('nav-me', '<div class="nav-me-halo"></div><div class="nav-me-cone"></div><div class="nav-me-dot"></div>');
@@ -135,6 +138,8 @@ export function createNavRouteLayer() {
   return {
     name: 'nav-route',
     object: group,
+    /** the start / destination markers (HTML), for Stage.labelRoot */
+    labels,
 
     /**
      * Shows a route (shared/nav-graph.js → route()), or clears it with null.
@@ -230,7 +235,8 @@ export function createNavRouteLayer() {
         l.geometry.dispose();
         l.material.dispose();
       }
-      group.traverse((o) => o.element?.remove());
+      labels.traverse((o) => o.element?.remove());
+      labels.removeFromParent();
     },
   };
 }

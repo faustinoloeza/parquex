@@ -2,6 +2,9 @@
 .marker-anchor {
   width: 0;
   height: 0;
+  /* a compositor layer of its own: moving the map moves it without repainting
+     it (shadows and glows included), which phones feel with a few dozen markers */
+  will-change: transform;
 }
 
 .activity-marker,

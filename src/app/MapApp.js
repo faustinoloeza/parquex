@@ -132,7 +132,7 @@ export class MapApp {
     });
     const { heightAt, routes } = this.world;
     this.routeSlugOf = makeRouteLookup(this.park.routes);
-    this.markers = createMarkers(this.stage.scene, this.park, {
+    this.markers = createMarkers(this.stage.labelRoot, this.park, {
       t: this.t,
       lang: this.lang,
       heightAt,
@@ -290,7 +290,7 @@ export class MapApp {
     this.selected = null;
     this.focusedRoute = null;
     old.markers.dispose();
-    this.markers = createMarkers(stage.scene, park, {
+    this.markers = createMarkers(stage.labelRoot, park, {
       t: this.t,
       lang: this.lang,
       heightAt: built.heightAt,
@@ -356,6 +356,7 @@ export class MapApp {
   setNavLayer(layer) {
     this.navLayer = layer;
     this.stage.scene.add(layer.object);
+    this.stage.labelRoot.add(layer.labels);
   }
 
   /** Flies the camera to a ground point (meters), as when an activity is selected. */
