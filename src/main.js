@@ -7,13 +7,14 @@ import { TIME_MODES, forcedTimeMode } from './app/time-of-day.js';
 import { THEME_MODES, activeTheme, forcedThemeMode } from './themes/index.js';
 import { applyTheme } from './ui/theme.js';
 import { PARKS } from './parks/index.js';
-import { translator } from './i18n/index.js';
+import { RTL, localized, translator } from './i18n/index.js';
 import { createHeader } from './ui/header.js';
 import { createSidebar } from './ui/sidebar/index.js';
 import { createActivitiesSheet } from './ui/activities-sheet.js';
 import { createPoiChips } from './ui/poi-chips.js';
 import { createFestivalPanel } from './ui/festival.js';
 import { createFestivalMarkers } from './ui/festival-markers.js';
+import { createAltarMarkers } from './ui/altar-markers.js';
 import { parkDate, sessionsOn } from './themes/muertos/festival.js';
 import { createToolbar } from './ui/toolbar.js';
 import { createAttribution } from './ui/attribution.js';
@@ -30,6 +31,7 @@ async function boot() {
   const canonical = routeUrl(parkKey, lang);
   if (location.pathname !== canonical) history.replaceState(null, '', canonical + location.search);
   document.documentElement.lang = lang;
+  document.documentElement.dir = RTL.has(lang) ? 'rtl' : 'ltr';
   const debug = debugFlags();
   const parkDef = PARKS[parkKey];
 
@@ -46,7 +48,7 @@ async function boot() {
   applyTheme(theme);
 
   let t = translator(lang);
-  const loading = createLoadingScreen(root, t, theme?.tagline?.[lang]);
+  const loading = createLoadingScreen(root, t, theme?.tagline && localized(theme.tagline, lang));
   const disclaimer = createDisclaimer(root, () => t);
   const navigate = (park, language) => {
     location.href = routeUrl(park, language);
@@ -70,6 +72,7 @@ async function boot() {
     onSelect: (poi) => {
       sidebar?.highlight(poi);
       festivalMarkers?.deselect();
+      altarMarkers?.deselect();
     },
   });
   try {
@@ -90,12 +93,13 @@ async function boot() {
   // a seasonal festival in the focused park (src/themes): its program and places, its markers
   let festival = null;
   let festivalMarkers = null;
+  // the theme's altars on the map (shown with the festival's places)
+  let altarMarkers = null;
   let festivalShown = true;
   const switchTheme = (next) => {
     theme = next;
     applyTheme(theme);
-    app.setTheme(theme);
-    loadFestival().then(() => buildChrome(app.parkDef));
+    Promise.all([app.setTheme(theme), loadFestival()]).then(() => buildChrome(app.parkDef));
   };
   // a season that ends (or starts) with the page open: the theme follows within a minute
   setInterval(() => {
@@ -195,8 +199,27 @@ async function boot() {
     chips?.remove();
     sidebar = activities = chips = null;
     festivalMarkers?.dispose();
-    festivalMarkers = null;
+    altarMarkers?.dispose();
+    festivalMarkers = altarMarkers = null;
     app.focusRoute(null);
+    const altars = app.world.parkLayers.find((l) => l.theme)?.altars ?? [];
+    if (altars.length) {
+      altarMarkers = createAltarMarkers(app.stage.scene, {
+        altars,
+        lang,
+        t,
+        heightAt: app.world.heightAt,
+        onChange: () => (app.labelsDirty = true),
+      });
+      // without a festival in this park the altars always show; with it they go with its chip
+      altarMarkers.show(!festival || festivalShown);
+    }
+    const showFestival = (on) => {
+      festivalShown = on;
+      festivalMarkers.show(on);
+      altarMarkers?.show(on);
+      chips?.setFestival(on);
+    };
     let festivalPanel = null;
     if (festival) {
       const { program, places, info } = festival;
@@ -217,13 +240,20 @@ async function boot() {
         // a session: its place's card on the map
         onPlace: (place, at, day) => {
           app.select(null);
+          showFestival(true);
           festivalMarkers.setDay(day);
           festivalMarkers.focus(place);
-          festivalShown = true;
-          chips?.setFestival(true);
           app.focusPoint(at.x, at.z);
         },
         onDay: (day) => festivalMarkers.setDay(day),
+        // an altar: its card on the map
+        altars: altarMarkers?.list() ?? [],
+        onAltar: (i) => {
+          app.select(null);
+          showFestival(true);
+          altarMarkers.focus(i);
+          app.focusPoint(altars[i].x, altars[i].z);
+        },
       });
       festivalMarkers.setDay(festivalPanel.day);
       festivalMarkers.show(festivalShown);
@@ -249,10 +279,7 @@ async function boot() {
           count: sessionsOn(festival.program, festivalPanel.day).length,
           on: festivalShown,
           bounds: festivalMarkers.bounds(),
-          onToggle: (on) => {
-            festivalShown = on;
-            festivalMarkers.show(on);
-          },
+          onToggle: (on) => showFestival(on),
         },
       });
     } else {

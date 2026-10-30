@@ -39,6 +39,10 @@ export const ICON = {
   directions: svg(
     '<path d="M12 2.5l9.5 9.5-9.5 9.5L2.5 12z"/><path d="M9 14.5v-3a1.5 1.5 0 0 1 1.5-1.5H15"/><path d="M13 7.8l2.2 2.2-2.2 2.2"/>',
   ),
+  // Día de Muertos altar: three steps with a candle on top
+  altar: svg(
+    '<path d="M3.5 20h17M5.5 20v-4h13v4M7.5 16v-4h9v4M9.5 12V8.5h5V12"/><path d="M12 8.5V6"/><path d="M12 2.6c.9 1 .9 2 0 2.6-.9-.6-.9-1.6 0-2.6z" fill="currentColor"/>',
+  ),
   // calavera (Día de Muertos theme): skull with filled eyes and nose
   skull: svg(
     '<path d="M12 3C7.6 3 4 6.1 4 10.2c0 2.3 1.1 4.1 2.8 5.2V18a1 1 0 0 0 1 1H9v2h2v-2h2v2h2v-2h1.2a1 1 0 0 0 1-1v-2.6c1.7-1.1 2.8-2.9 2.8-5.2C20 6.1 16.4 3 12 3z"/><circle cx="9" cy="11" r="1.9" fill="currentColor"/><circle cx="15" cy="11" r="1.9" fill="currentColor"/><path d="M12 13.6l-1 1.8h2z" fill="currentColor"/>',
@@ -47,11 +51,86 @@ export const ICON = {
 };
 
 export const SERVICE_TYPES = {
-  wc: { icon: ICON.wc, color: '#0284c7', label: { es: 'Baños', en: 'Restrooms' } },
-  locker: { icon: ICON.key, color: '#d97706', label: { es: 'Renta de casilleros', en: 'Locker rental' } },
-  'first-aid': { icon: ICON.cross, color: '#dc2626', label: { es: 'Enfermería', en: 'First aid' } },
-  wheelchair: { icon: ICON.wheelchair, color: '#7c3aed', label: { es: 'Sillas de ruedas y carriolas', en: 'Wheelchairs & strollers' } },
-  ramp: { icon: ICON.ramp, color: '#ea580c', label: { es: 'Rampas difíciles', en: 'Steep ramps' } },
+  wc: {
+    icon: ICON.wc,
+    color: '#0284c7',
+    label: {
+      es: 'Baños',
+      en: 'Restrooms',
+      zh: '卫生间',
+      ja: 'トイレ',
+      fr: 'Toilettes',
+      pt: 'Banheiros',
+      ko: '화장실',
+      ar: 'دورات المياه',
+      it: 'Servizi igienici',
+      hi: 'शौचालय',
+    },
+  },
+  locker: {
+    icon: ICON.key,
+    color: '#d97706',
+    label: {
+      es: 'Renta de casilleros',
+      en: 'Locker rental',
+      zh: '储物柜租赁',
+      ja: 'ロッカー',
+      fr: 'Location de casiers',
+      pt: 'Aluguel de armários',
+      ko: '사물함 대여',
+      ar: 'تأجير الخزائن',
+      it: 'Noleggio armadietti',
+      hi: 'लॉकर किराया',
+    },
+  },
+  'first-aid': {
+    icon: ICON.cross,
+    color: '#dc2626',
+    label: {
+      es: 'Enfermería',
+      en: 'First aid',
+      zh: '医务室',
+      ja: '救護室',
+      fr: 'Infirmerie',
+      pt: 'Enfermaria',
+      ko: '의무실',
+      ar: 'الإسعافات الأولية',
+      it: 'Infermeria',
+      hi: 'प्राथमिक चिकित्सा',
+    },
+  },
+  wheelchair: {
+    icon: ICON.wheelchair,
+    color: '#7c3aed',
+    label: {
+      es: 'Sillas de ruedas y carriolas',
+      en: 'Wheelchairs & strollers',
+      zh: '轮椅和婴儿车',
+      ja: '車いす・ベビーカー',
+      fr: 'Fauteuils roulants et poussettes',
+      pt: 'Cadeiras de rodas e carrinhos de bebê',
+      ko: '휠체어 및 유모차',
+      ar: 'كراسٍ متحركة وعربات أطفال',
+      it: 'Sedie a rotelle e passeggini',
+      hi: 'व्हीलचेयर और स्ट्रोलर',
+    },
+  },
+  ramp: {
+    icon: ICON.ramp,
+    color: '#ea580c',
+    label: {
+      es: 'Rampas difíciles',
+      en: 'Steep ramps',
+      zh: '陡坡',
+      ja: '急なスロープ',
+      fr: 'Rampes raides',
+      pt: 'Rampas íngremes',
+      ko: '가파른 경사로',
+      ar: 'منحدرات شديدة',
+      it: 'Rampe ripide',
+      hi: 'खड़ी ढलानें',
+    },
+  },
 };
 
 // Activity categories as named in the official data (Spanish keys).

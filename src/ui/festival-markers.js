@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { ICON } from './icons.js';
 import { esc } from './dom.js';
+import { localized } from '../i18n/index.js';
 import { sessionsOn } from '../themes/muertos/festival.js';
 
 /**
@@ -20,7 +21,7 @@ import { sessionsOn } from '../themes/muertos/festival.js';
  * @param {() => void} options.onChange  the HTML changed (MapApp redraws the labels)
  */
 export function createFestivalMarkers(scene, { program, places, lang, t, heightAt, onChange }) {
-  const L = (v) => v?.[lang] || v?.es || '';
+  const L = (v) => localized(v, lang);
   const group = new THREE.Group();
   group.name = 'festival-markers';
   group.visible = false;

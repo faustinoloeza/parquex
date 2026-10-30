@@ -14,9 +14,20 @@ const ROWS = { xc: xcRows };
 /** @type {import('../index.js').Theme} */
 export default {
   key: 'muertos',
-  label: { es: 'Día de Muertos', en: 'Day of the Dead' },
+  label: {
+    es: 'Día de Muertos',
+    en: 'Day of the Dead',
+    zh: '亡灵节',
+    ja: '死者の日',
+    fr: 'Jour des Morts',
+    pt: 'Dia dos Mortos',
+    ko: '망자의 날',
+    ar: 'يوم الموتى',
+    it: 'Giorno dei Morti',
+    hi: 'मृतकों का दिन',
+  },
   season: { from: [10, 1], to: [11, 2] },
-  tagline: { es: 'Festival de Vida y Muerte', en: 'Life and Death Festival' },
+  tagline: FESTIVAL.name,
   alwaysNight: true,
   // Xcaret's festival: its program and where it happens
   festival: { ...FESTIVAL, places: PLACES },
@@ -34,9 +45,9 @@ export default {
   },
   async decorations(ctx) {
     const { createMuertosLayer } = await import('./decorations.js');
-    const places = Object.values(PLACES[ctx.park.key] ?? {})
-      .filter((p) => p?.altar)
-      .map((p) => ({ x: p.x, z: p.z, at: typeof p.altar === 'object' ? p.altar : null }));
+    const places = Object.entries(PLACES[ctx.park.key] ?? {})
+      .filter(([, p]) => p?.altar)
+      .map(([name, p]) => ({ x: p.x, z: p.z, at: typeof p.altar === 'object' ? p.altar : null, place: name }));
     return createMuertosLayer({ ...ctx, places, rows: ROWS[ctx.park.key] ?? [] });
   },
 };

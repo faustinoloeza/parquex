@@ -200,3 +200,80 @@
 .gx-night .fm-head {
   color: #f1f3f9;
 }
+
+/* the theme's altars on the map (ui/altar-markers.js): a marigold pill with an altar */
+.altar-marker,
+.altar-marker-selected {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-50%);
+  pointer-events: auto;
+  font-family: inherit;
+}
+.altar-marker {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #f57c00;
+  box-shadow: var(--elev-3);
+  color: #fff;
+  cursor: pointer;
+}
+.altar-marker:hover,
+.altar-marker:focus-visible {
+  transform: translateX(-50%) scale(1.15);
+  outline: none;
+}
+.altar-marker svg,
+.altar-marker-selected svg,
+.fest .fest-time svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+.altar-marker-selected {
+  z-index: 100;
+  width: min(250px, calc(100vw - 32px));
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--elev-6);
+  color: var(--ink);
+  cursor: pointer;
+}
+.altar-marker-selected .fm-head svg {
+  color: #f57c00;
+}
+.altar-marker-selected p {
+  margin: 2px 0 0 32px;
+  font-size: 13px;
+  color: #1f2a2eb3;
+}
+.fest .fest-time svg {
+  color: #f57c00;
+}
+.gx-night .altar-marker {
+  box-shadow:
+    0 0 0 1px #0b142e66,
+    0 0 12px #ff8f0080,
+    var(--elev-3);
+}
+.gx-night .altar-marker-selected {
+  background: #1b2440;
+  color: #f1f3f9;
+}
+.gx-night .altar-marker-selected p {
+  color: #f1f3f9b3;
+}
+
+/* an open card stays above the other markers (CSS2DRenderer sets each anchor's z-index by depth every frame) */
+.marker-anchor:has(> .fest-marker-selected, > .altar-marker-selected) {
+  z-index: 100000 !important;
+}

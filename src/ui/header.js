@@ -1,12 +1,10 @@
 import { PARKS, SELECTABLE_PARKS } from '../parks/index.js';
-import { LANGS } from '../i18n/index.js';
+import { LANGS, LANG_NAMES, localized } from '../i18n/index.js';
 import { esc } from './dom.js';
 import { attachMenu } from './menu.js';
 import { TIME_MODES } from '../app/time-of-day.js';
 import { THEMES, activeTheme, themeModes } from '../themes/index.js';
 
-/** Language names in their own language (not translated). */
-const LANG_NAMES = { es: 'Español', en: 'English' };
 const QUALITIES = ['auto', 'high', 'medium', 'low'];
 
 const ICONS = {
@@ -81,56 +79,65 @@ export function createHeader(
   const themeLabel = (mode) => {
     if (mode === 'auto') {
       const now = activeTheme('auto');
-      return now ? `${t('theme_auto')} (${now.label[lang] ?? now.label.es})` : t('theme_auto');
+      return now ? `${t('theme_auto')} (${localized(now.label, lang)})` : t('theme_auto');
     }
-    return THEMES[mode] ? (THEMES[mode].label[lang] ?? THEMES[mode].label.es) : t('theme_classic');
+    return THEMES[mode] ? localized(THEMES[mode].label, lang) : t('theme_classic');
   };
   attachMenu(
     el.querySelector('.tb-settings button'),
+    // one collapsible group per setting, showing its current choice: a short menu even with many languages
     () => [
-      { title: t('language') },
-      ...LANGS.map((l) => ({
-        label: LANG_NAMES[l] ?? l.toUpperCase(),
-        checked: l === lang,
-        onSelect: () => l !== lang && onNavigate(park, l),
-      })),
+      {
+        group: t('language'),
+        items: LANGS.map((l) => ({
+          label: LANG_NAMES[l] ?? l.toUpperCase(),
+          checked: l === lang,
+          onSelect: () => l !== lang && onNavigate(park, l),
+        })),
+      },
       ...(onQuality
         ? [
-            { title: t('quality') },
-            ...QUALITIES.map((q) => ({
-              label: t('q_' + q),
-              checked: q === current,
-              onSelect: () => {
-                current = q;
-                onQuality(q);
-              },
-            })),
+            {
+              group: t('quality'),
+              items: QUALITIES.map((q) => ({
+                label: t('q_' + q),
+                checked: q === current,
+                onSelect: () => {
+                  current = q;
+                  onQuality(q);
+                },
+              })),
+            },
           ]
         : []),
       ...(onTimeMode
         ? [
-            { title: t('timeOfDay') },
-            ...TIME_MODES.map((m) => ({
-              label: t('time_' + m),
-              checked: m === currentTime,
-              onSelect: () => {
-                currentTime = m;
-                onTimeMode(m);
-              },
-            })),
+            {
+              group: t('timeOfDay'),
+              items: TIME_MODES.map((m) => ({
+                label: t('time_' + m),
+                checked: m === currentTime,
+                onSelect: () => {
+                  currentTime = m;
+                  onTimeMode(m);
+                },
+              })),
+            },
           ]
         : []),
       ...(onTheme && themeModes().length
         ? [
-            { title: t('theme') },
-            ...themeModes().map((m) => ({
-              label: themeLabel(m),
-              checked: m === currentTheme,
-              onSelect: () => {
-                currentTheme = m;
-                onTheme(m);
-              },
-            })),
+            {
+              group: t('theme'),
+              items: themeModes().map((m) => ({
+                label: themeLabel(m),
+                checked: m === currentTheme,
+                onSelect: () => {
+                  currentTheme = m;
+                  onTheme(m);
+                },
+              })),
+            },
           ]
         : []),
     ],

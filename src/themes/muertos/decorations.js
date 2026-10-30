@@ -143,7 +143,13 @@ export function createMuertosLayer({
 
   // ---------------------------------------------------------- the altars
   const spots = places.length ? places : defaultSpots(park);
-  const altars = spots.map((s) => s.at ?? freeSpot(s.x, s.z, { lines, accept, clearance: 3, reach: 14, maxRadius: 28 })).filter(Boolean);
+  /** where every altar stands, with its style and place (a name, a { es, en } name or 'entrance'), for the markers */
+  const altars = spots
+    .map((s) => {
+      const at = s.at ?? freeSpot(s.x, s.z, { lines, accept, clearance: 3, reach: 14, maxRadius: 28 });
+      return at && { ...at, style: 'tiers', place: s.place ?? null };
+    })
+    .filter(Boolean);
   const altarParts = [];
   const bulbs = [];
   /** Puts an altar of a style at a spot: its geometry, candles, string lights and light. */
@@ -213,8 +219,11 @@ export function createMuertosLayer({
         minGap: R.minGap,
         accept: altarAccept,
       });
-      spots.forEach((spot, k) => addAltar(row.styles[k % row.styles.length], spot, undefined, S.light.rowAltar));
-      altars.push(...spots);
+      spots.forEach((spot, k) => {
+        const style = row.styles[k % row.styles.length];
+        addAltar(style, spot, undefined, S.light.rowAltar);
+        altars.push({ ...spot, style, place: route.name });
+      });
     }
   }
 
@@ -394,7 +403,7 @@ export function createMuertosLayer({
 
 /** Where the altars go without festival places: the entrance and three activities far from it and each other. */
 function defaultSpots(park) {
-  const spots = park.entrance ? [park.entrance] : [];
+  const spots = park.entrance ? [{ ...park.entrance, place: 'entrance' }] : [];
   const pois = park.pois.filter((p) => p.active !== false);
   while (spots.length < 4 && pois.length) {
     let best = null,
@@ -403,7 +412,7 @@ function defaultSpots(park) {
       const d = spots.length ? Math.min(...spots.map((s) => Math.hypot(p.x - s.x, p.z - s.z))) : 0;
       if (d > bestD) [best, bestD] = [p, d];
     }
-    spots.push(best);
+    spots.push({ x: best.x, z: best.z, place: best.name });
     pois.splice(pois.indexOf(best), 1);
   }
   return spots;

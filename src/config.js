@@ -16,6 +16,17 @@ export const BASEMAP = {
   background: '#f2efe9',
   /** color of the map style's sea: a region's sea fades to it at its outline (layers/neighbors.js) */
   sea: '#aad3df',
-  attribution: { es: '© colaboradores de OpenStreetMap', en: '© OpenStreetMap contributors' },
+  attribution: {
+    es: '© colaboradores de OpenStreetMap',
+    en: '© OpenStreetMap contributors',
+    zh: '© OpenStreetMap 贡献者',
+    ja: '© OpenStreetMap 貢献者',
+    fr: '© les contributeurs d’OpenStreetMap',
+    pt: '© colaboradores do OpenStreetMap',
+    ko: '© OpenStreetMap 기여자',
+    ar: '© مساهمو OpenStreetMap',
+    it: '© contributori di OpenStreetMap',
+    hi: '© OpenStreetMap योगदानकर्ता',
+  },
   attributionUrl: 'https://www.openstreetmap.org/copyright',
 };

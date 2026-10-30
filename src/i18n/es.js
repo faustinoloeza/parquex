@@ -69,6 +69,14 @@ export default {
   festival_sessions: 'funciones',
   festival_park: 'Actividades del parque',
   festival_source: 'Programa oficial del festival ↗',
+  // Día de Muertos altars on the map (ui/altar-markers.js)
+  entrance: 'Entrada',
+  altars: 'Altares de Día de Muertos',
+  altar_tiers: 'Altar de tres niveles',
+  altar_sarape: 'Altar con sarapes',
+  altar_shelves: 'Altar de repisas',
+  altar_cake: 'Altar de pisos redondos',
+  altar_pyramid: 'Altar de pirámide',
   credits: 'Datos: Grupo Xcaret, OpenStreetMap',
   // unofficial-site notice (ui/disclaimer.js)
   disclaimerEyebrow: 'Sitio no oficial',
