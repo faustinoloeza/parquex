@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { buildGraph, compassOf, makeSteps, nearestPoint, pruneSpikes, route, turnAngle } from '#shared/nav-graph.js';
-import { translator } from '../../src/i18n/index.js';
+import { loadLanguage, translator } from '../../src/i18n/index.js';
 
+await Promise.all([loadLanguage('es'), loadLanguage('en')]);
 const es = translator('es');
 const en = translator('en');
 

@@ -14,7 +14,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { gzipSync, constants } from 'node:zlib';
-import { SELECTABLE_PARKS, DEFAULT_PARK } from '../src/parks/index.js';
+import { SELECTABLE_PARKS, DEFAULT_PARK } from '../src/parks/catalog.js';
 import { groundTileId, groundTilePath } from '../shared/formats/ground-tiles.js';
 import { PAVING_FILE } from '../shared/formats/paving.js';
 

@@ -1,4 +1,4 @@
-import { PARKS, SELECTABLE_PARKS } from '../parks/index.js';
+import { PARK_CATALOG, SELECTABLE_PARKS } from '../parks/catalog.js';
 import { LANGS, LANG_NAMES, localized } from '../i18n/index.js';
 import { esc } from './dom.js';
 import { attachMenu } from './menu.js';
@@ -40,7 +40,7 @@ export function createHeader(
   root,
   { park, lang, t, hours, quality, onNavigate, onMenu, onQuality, timeMode, onTimeMode, themeMode, onTheme },
 ) {
-  const title = PARKS[park]?.name ?? park;
+  const title = PARK_CATALOG[park]?.name ?? park;
   const hoursText = hours ? `${hours.open} – ${hours.close}` : '';
   const el = document.createElement('header');
   el.className = 'topbar';
@@ -64,10 +64,10 @@ export function createHeader(
   attachMenu(
     el.querySelector('.tb-pill'),
     () =>
-      SELECTABLE_PARKS.map((key) => PARKS[key]).map((p) => ({
-        label: p.name,
-        checked: p.key === park,
-        onSelect: () => p.key !== park && onNavigate(p.key, lang),
+      SELECTABLE_PARKS.map((key) => ({
+        label: PARK_CATALOG[key].name,
+        checked: key === park,
+        onSelect: () => key !== park && onNavigate(key, lang),
       })),
     { label: t('parkSwitcher') },
   );

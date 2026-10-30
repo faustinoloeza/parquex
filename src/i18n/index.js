@@ -1,18 +1,20 @@
-import es from './es.js';
-import en from './en.js';
-import zh from './zh.js';
-import ja from './ja.js';
-import fr from './fr.js';
-import pt from './pt.js';
-import ko from './ko.js';
-import ar from './ar.js';
-import it from './it.js';
-import hi from './hi.js';
-
-const STRINGS = { es, en, zh, ja, fr, pt, ko, ar, it, hi };
+// UI strings, one file per language, each loaded only when it is used
+// (loadLanguage): the app ships the strings of the page's language alone.
 
 /** Supported languages, in the order of the settings menu; the first one is the default. */
-export const LANGS = Object.keys(STRINGS);
+const LOADERS = {
+  es: () => import('./es.js'),
+  en: () => import('./en.js'),
+  zh: () => import('./zh.js'),
+  ja: () => import('./ja.js'),
+  fr: () => import('./fr.js'),
+  pt: () => import('./pt.js'),
+  ko: () => import('./ko.js'),
+  ar: () => import('./ar.js'),
+  it: () => import('./it.js'),
+  hi: () => import('./hi.js'),
+};
+export const LANGS = Object.keys(LOADERS);
 
 /** Language names in their own language (not translated). */
 export const LANG_NAMES = {
@@ -45,16 +47,33 @@ export const LOCALES = {
 /** Languages written right to left (html dir="rtl"). */
 export const RTL = new Set(['ar']);
 
+/** Strings loaded so far, by language. */
+const STRINGS = {};
+
+/** The language a language falls back to for a missing string: English (Spanish has none). */
+const fallbackOf = (lang) => (lang === 'es' ? null : 'en');
+
+/**
+ * Loads the strings of a language (and of its fallback) before translator()
+ * is used with it.
+ * @param {string} lang
+ */
+export async function loadLanguage(lang) {
+  const needed = [lang, fallbackOf(lang)].filter((l) => l && LOADERS[l] && !STRINGS[l]);
+  await Promise.all(needed.map(async (l) => (STRINGS[l] = (await LOADERS[l]()).default)));
+}
+
 /**
  * Returns t(key): park labels (official data, park.json) first, then the UI
- * strings of the language, then English (Spanish for Spanish), then Spanish,
- * then the key itself.
+ * strings of the language, then English, then the key itself. The language
+ * must be loaded (loadLanguage).
  * @param {string} lang
  * @param {Record<string, Record<string, string>>} [labels] park.json → labels
  */
 export function translator(lang, labels = {}) {
-  const fallback = lang === 'es' ? STRINGS.es : STRINGS.en;
-  return (key) => labels[lang]?.[key] ?? STRINGS[lang]?.[key] ?? fallback[key] ?? STRINGS.es[key] ?? key;
+  const own = STRINGS[lang] ?? {},
+    fallback = STRINGS[fallbackOf(lang)] ?? {};
+  return (key) => labels[lang]?.[key] ?? own[key] ?? fallback[key] ?? key;
 }
 
 /**

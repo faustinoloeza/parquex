@@ -14,7 +14,7 @@ import {
   createLampsLayer,
 } from '../layers/index.js';
 import * as THREE from 'three';
-import { PARKS } from '../parks/index.js';
+import { PARK_CATALOG } from '../parks/catalog.js';
 import { loadParkJson, loadNeighborAssets } from './assets.js';
 import { makeDesignArea } from '#shared/design-area.js';
 import { makeGroundHoles, surfaceSampler } from '#shared/ground-holes.js';
@@ -148,7 +148,7 @@ export async function createWorld(
       focus: { park, designArea: own.designArea },
       stage,
       sunDirection: SUN,
-      keys: Object.keys(PARKS),
+      keys: Object.keys(PARK_CATALOG),
       load,
       onRegion: (area) => basemap.setRegion(area),
     });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LANGS, LANG_NAMES, LOCALES, localized, translator } from '../../src/i18n/index.js';
+import { LANGS, LANG_NAMES, LOCALES, loadLanguage, localized, translator } from '../../src/i18n/index.js';
 import en from '../../src/i18n/en.js';
 
 describe('UI languages', () => {
@@ -23,7 +23,8 @@ describe('UI languages', () => {
     }
   });
 
-  it('falls back to English (Spanish for Spanish), then to the key', () => {
+  it('falls back to English (Spanish for Spanish), then to the key', async () => {
+    await loadLanguage('ja');
     const t = translator('ja', { ja: { lbl_map_prefix_xc: 'パーク' } });
     expect(t('lbl_map_prefix_xc')).toBe('パーク'); // the park's own labels first
     expect(t('nav_go')).toBe('行く');

@@ -9,7 +9,6 @@ import { disposeObject, estimateMemory } from '../graphics/memory.js';
 import { parkOffset } from '#shared/neighbors.js';
 import { nightFor } from './time-of-day.js';
 import { NIGHT_TRANSITION, setNightLevel } from '../graphics/night.js';
-import { createNavRouteLayer } from '../layers/nav-route.js';
 
 /**
  * The 3D map of one park: loads its assets, builds the world and runs the
@@ -65,6 +64,8 @@ export class MapApp {
     this.paused = false;
     this.lastMove = 0;
     this.neighborsStarted = false;
+    /** walking route and walker (layers/nav-route.js), added with the navigation (app/walking.js) */
+    this.navLayer = null;
     /** optional per-frame hook (stats overlay) */
     this.onFrame = null;
     /** called after focusPark() swapped the focused park in (UI: header, sidebar, URL) */
@@ -135,9 +136,6 @@ export class MapApp {
       onSelect: (poi) => this.select(poi),
       onDirections: (poi) => this.onDirections?.(poi),
     });
-    // walking route and walker (app/navigation.js); kept across park switches
-    this.navLayer = createNavRouteLayer();
-    this.stage.scene.add(this.navLayer.object);
     this.rig = new CameraRig(this.stage, { clear: this.park.clear, heightAt });
     if (this.debug.view) {
       const [x, z, distance, polar = 45, azimuth = 0] = this.debug.view;
@@ -349,6 +347,12 @@ export class MapApp {
     this.routes.focus(slugs.size ? slugs : this.selected ? this.routeSlugOf(this.selected) : null);
   }
 
+  /** Adds the walking route layer (app/walking.js, on the first directions); kept across park switches. */
+  setNavLayer(layer) {
+    this.navLayer = layer;
+    this.stage.scene.add(layer.object);
+  }
+
   /** Flies the camera to a ground point (meters), as when an activity is selected. */
   focusPoint(x, z) {
     this.rig.focusPoint(x, z);
@@ -554,7 +558,7 @@ export class MapApp {
       fogFar: stage.scene.fog.far,
     };
     for (const layer of this.world.layers) layer.update?.(frame);
-    this.navLayer.update(frame);
+    this.navLayer?.update(frame);
 
     stage.render();
     this.onFrame?.(dt);

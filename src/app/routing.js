@@ -1,4 +1,4 @@
-import { SELECTABLE_PARKS, DEFAULT_PARK } from '../parks/index.js';
+import { SELECTABLE_PARKS, DEFAULT_PARK } from '../parks/catalog.js';
 import { LANGS } from '../i18n/index.js';
 
 /** Where the site is served from ('/', or '/<repo>/' on GitHub Pages; vite.config.js → base). */
