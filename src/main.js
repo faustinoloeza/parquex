@@ -8,6 +8,8 @@ import { PARKS } from './parks/index.js';
 import { translator } from './i18n/index.js';
 import { createHeader } from './ui/header.js';
 import { createSidebar } from './ui/sidebar/index.js';
+import { createActivitiesSheet } from './ui/activities-sheet.js';
+import { createPoiChips } from './ui/poi-chips.js';
 import { createToolbar } from './ui/toolbar.js';
 import { createAttribution } from './ui/attribution.js';
 import { createLoadingScreen } from './ui/loading-screen.js';
@@ -62,11 +64,15 @@ async function boot() {
     return;
   }
 
-  // header and sidebar of the focused park (rebuilt when the focus moves to a
-  // neighboring park in place)
+  // header and activity list of the focused park (rebuilt when the focus moves
+  // to a neighboring park in place, and when the window crosses the phone
+  // width): the sidebar on desktop; on phones, as in the Android app, a bottom
+  // sheet opened from the top bar and filter chips over the map
   let topbar = null;
-  const desktop = !matchMedia(MOBILE).matches;
-  let sidebarOpen = !(debug.nosidebar || !desktop);
+  let activities = null;
+  let chips = null;
+  const phone = matchMedia(MOBILE);
+  let sidebarOpen = !debug.nosidebar;
 
   // walking navigation: directions panel + guidance (app/navigation.js)
   let navigation = null;
@@ -87,7 +93,8 @@ async function boot() {
     html.classList.toggle('gx-nav-preview', mode === 'preview');
     html.classList.toggle('gx-nav-active', mode === 'active');
     // the map is centered in the area the panels leave free
-    if (mode === 'preview') app.setInset(desktop ? directions.panel.offsetWidth + 12 : 0, desktop ? 0 : directions.sheetHeight());
+    if (mode === 'preview')
+      app.setInset(phone.matches ? 0 : directions.panel.offsetWidth + 12, phone.matches ? directions.sheetHeight() : 0);
     else if (mode === 'active') app.setInset(0, 0);
     else syncInset();
   };
@@ -95,10 +102,16 @@ async function boot() {
   app.onDirections = (poi) => navigation.directions(poi);
 
   const syncInset = () => {
+    if (!sidebar) {
+      // the phone sheet is modal: the map keeps its full-screen framing
+      topbar.setListOpen(activities.isOpen);
+      app.setInset(0);
+      return;
+    }
     const open = !sidebar.el.classList.contains('collapsed');
     sidebarOpen = open;
     topbar.setListOpen(open);
-    app.setInset(desktop && open ? sidebar.el.offsetWidth + 12 : 0);
+    app.setInset(open ? sidebar.el.offsetWidth + 12 : 0);
   };
   const buildChrome = (current) => {
     // the park's own labels (official data) refine the UI strings
@@ -113,7 +126,7 @@ async function boot() {
       hours: app.park.hours,
       quality,
       onNavigate: navigateOrFocus,
-      onMenu: () => sidebar.toggle(),
+      onMenu: () => (activities ? activities.open() : sidebar.toggle()),
       onQuality: (mode) => {
         quality = mode;
         writePreference('quality', mode);
@@ -128,19 +141,38 @@ async function boot() {
     });
     document.title = `${t(current.labelKey)} 3D`;
     sidebar?.el.remove();
-    sidebar = createSidebar(root, {
+    activities?.remove();
+    chips?.remove();
+    sidebar = activities = chips = null;
+    app.focusRoute(null);
+    const common = {
       park: app.park,
       lang,
       t,
       onSelect: (poi) => app.select(poi),
-      onFilter: (filter) => app.applyFilter(filter),
-      onFocusRoute: (slug) => app.focusRoute(slug),
       onDirections: (poi) => navigation.directions(poi),
       onAbout: () => disclaimer.open({ force: true }),
-    });
-    // on desktop the map is centered in the area next to the sidebar
-    sidebar.toggle(sidebarOpen);
-    new MutationObserver(syncInset).observe(sidebar.el, { attributes: true, attributeFilter: ['class'] });
+    };
+    if (phone.matches) {
+      activities = createActivitiesSheet(root, { ...common, onToggle: (open) => topbar.setListOpen(open) });
+      chips = createPoiChips(root, {
+        park: app.park,
+        lang,
+        t,
+        onFilter: (filter) => app.applyFilter(filter),
+        onRoutes: (slugs) => app.focusRoutes(slugs),
+        onFrame: (bounds) => app.frameArea(bounds),
+      });
+    } else {
+      sidebar = createSidebar(root, {
+        ...common,
+        onFilter: (filter) => app.applyFilter(filter),
+        onFocusRoute: (slug) => app.focusRoute(slug),
+      });
+      // on desktop the map is centered in the area next to the sidebar
+      sidebar.toggle(sidebarOpen);
+      new MutationObserver(syncInset).observe(sidebar.el, { attributes: true, attributeFilter: ['class'] });
+    }
     syncInset();
   };
   // parks next to the focused one (Xcaret, Xplor, Xenses) switch in place: the
@@ -167,6 +199,7 @@ async function boot() {
     fromHistory = false;
   });
   buildChrome(parkDef);
+  phone.addEventListener('change', () => buildChrome(app.parkDef));
 
   createToolbar(root, app, t);
   createAttribution(root, lang);

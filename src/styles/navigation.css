@@ -21,6 +21,11 @@
   opacity: 0;
   pointer-events: none;
 }
+/* phones: so do the filter chips (the directions take the bottom) */
+.gx-nav-preview .poi-chips,
+.gx-nav-active .poi-chips {
+  display: none;
+}
 
 .nav-panel {
   position: absolute;

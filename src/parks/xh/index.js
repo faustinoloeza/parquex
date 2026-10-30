@@ -3,6 +3,7 @@ import landmarks from './landmarks.js';
 import edits from './edits.js';
 import vehicles from './vehicles.js';
 import activities from './activities.js';
+import services from './services.js';
 
 // Xel-Há: sources, a first landmark and corrections; more landmarks still to model.
 export default definePark({
@@ -13,6 +14,7 @@ export default definePark({
   edits,
   vehicles,
   activities,
+  services,
   sources: {
     code: 'xh',
     // center (origin of the local frame) and corner bounds of the official map

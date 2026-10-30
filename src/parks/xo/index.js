@@ -1,5 +1,6 @@
 import { definePark } from '../define.js';
 import activities from './activities.js';
+import services from './services.js';
 import landmarks from './landmarks.js';
 import edits from './edits.js';
 import vehicles from './vehicles.js';
@@ -11,6 +12,7 @@ export default definePark({
   name: 'Xoximilco',
   labelKey: 'lbl_map_prefix_xo',
   activities,
+  services,
   landmarks,
   edits,
   vehicles,

@@ -1,15 +1,16 @@
 import { ICON } from '../icons.js';
-import { esc, normalize } from '../dom.js';
 import { localized } from '../../i18n/index.js';
 import { openState } from '../opening-hours.js';
-import { poiRow } from './poi-row.js';
+import { poiRow, poiMatches } from './poi-row.js';
+import { parkHeader } from './park-header.js';
 import { renderRoutesPane } from './routes-pane.js';
 import { renderPlacesPane } from './places-pane.js';
 import { renderHoursPane } from './hours-pane.js';
 
 /**
- * Side panel (bottom sheet on phones): park status, search and three tabs
- * (routes, places, hours). It owns the filter state and reports it through
+ * Side panel on desktop (phones get ui/activities-sheet.js and
+ * ui/poi-chips.js): park status, search and three tabs (routes, places,
+ * hours). It owns the filter state and reports it through
  * onFilter({ visible(poi, slug), services, routeVisibility? }).
  *
  * Activity markers are hidden by default: they show for the focused route,
@@ -47,14 +48,7 @@ export function createSidebar(root, { park, lang, t, onSelect, onFilter, onFocus
   el.className = 'sidebar';
   el.setAttribute('aria-label', park.name);
   el.innerHTML = `
-    <div class="sb-handle" aria-hidden="true"></div>
-    <div class="sb-head">
-      <div class="sb-title">
-        <h2>${esc(park.name)}</h2>
-        ${parkState ? `<span class="sb-status ${parkState.open ? 'is-open' : 'is-closed'}">${parkState.open ? `${t('open')} · ${t('closesAt')} ${parkState.to}` : `${t('closed')} · ${t('opensAt')} ${parkState.from}`}</span>` : ''}
-      </div>
-      ${park.hours ? `<p class="sb-hours">${ICON.clock}<span>${t('parkHours')}: <b>${park.hours.open} – ${park.hours.close}</b></span></p>` : ''}
-      <label class="sb-search">${ICON.search}<input type="search" placeholder="${t('search')}" autocomplete="off"><button class="sb-clear" aria-label="${t('close')}" hidden>${ICON.close}</button></label>
+    <div class="sb-head">${parkHeader(park, t)}
     </div>
     <nav class="sb-tabs" role="tablist">
       <button role="tab" data-tab="routes" aria-selected="true">${ICON.route}${t('tabRoutes')}</button>
@@ -77,13 +71,9 @@ export function createSidebar(root, { park, lang, t, onSelect, onFilter, onFocus
 
   // -------------------------------------------------------------- filtering
   let routes = null;
-  const matches = (p) => {
-    const q = normalize(state.search);
-    return normalize(`${p.number} ${p.name.es} ${p.name.en} ${p.category.es} ${p.route.es ?? ''} ${p.desc ?? ''}`).includes(q);
-  };
   const visible = (p, slug = slugOf(p)) => {
     if (slug && !routes.isVisible(slug)) return false;
-    if (state.search) return matches(p);
+    if (state.search) return poiMatches(p, state.search);
     if (state.focus) return slug === state.focus;
     return state.categories.get(categoryOf(p));
   };
@@ -135,14 +125,12 @@ export function createSidebar(root, { park, lang, t, onSelect, onFilter, onFocus
     if (go) {
       const p = pois.find((x) => x.id === go.dataset.go);
       if (p) onDirections?.(p);
-      if (matchMedia('(max-width: 640px)').matches) el.classList.remove('expanded');
       return;
     }
     const row = e.target.closest('[data-poi]');
     if (!row) return;
     const p = pois.find((x) => x.id === row.dataset.poi);
     if (p) onSelect(p);
-    if (matchMedia('(max-width: 640px)').matches) el.classList.remove('expanded');
   });
 
   // ----------------------------------------------------------------- search
@@ -167,10 +155,6 @@ export function createSidebar(root, { park, lang, t, onSelect, onFilter, onFocus
     input.dispatchEvent(new Event('input'));
     input.focus();
   });
-
-  // mobile bottom sheet: tap the handle to expand, or focus the search
-  el.querySelector('.sb-handle').addEventListener('click', () => el.classList.toggle('expanded'));
-  input.addEventListener('focus', () => el.classList.add('expanded'));
 
   // start with no activity markers on the map (see visible())
   emit();

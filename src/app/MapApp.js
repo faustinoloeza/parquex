@@ -335,6 +335,17 @@ export class MapApp {
     if (box && !box.isEmpty()) this.rig.frameBox(box);
   }
 
+  /** Highlights several routes at once (the active filter chips on phones); an empty set clears. */
+  focusRoutes(slugs) {
+    this.focusedRoute = slugs.size ? [...slugs][0] : null;
+    this.routes.focus(slugs.size ? slugs : this.selected ? this.routeSlugOf(this.selected) : null);
+  }
+
+  /** Frames a ground rectangle ({ x0, x1, z0, z1 }, meters). */
+  frameArea({ x0, x1, z0, z1 }) {
+    this.rig.frameBox(new THREE.Box3(new THREE.Vector3(x0, 0, z0), new THREE.Vector3(x1, 0, z1)));
+  }
+
   zoom(factor) {
     this.rig.zoom(factor);
   }
