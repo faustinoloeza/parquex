@@ -1,6 +1,7 @@
 import { getModel, landmarkGroundHoles } from '#models/index.js';
 import { makeGroundHoles } from '#shared/ground-holes.js';
 import { BUS_CLEARANCE, expandBusRows } from '#shared/vehicles.js';
+import { pointInPolygon } from './lib/raster.js';
 
 /** Edit kinds understood by the pipeline (documented in src/parks/xc/edits.js). */
 export const EDIT_KINDS = [
@@ -49,9 +50,16 @@ export function resolveSite(park) {
   // areas kept free of generated trees and generic buildings
   const clearCircles = [
     ...landmarks.filter((l) => l.clear).map((l) => ({ x: l.x, z: l.z, r: l.clear })),
-    ...edits('clearTrees').map((e) => ({ x: origin(e)[0], z: origin(e)[1], r: e.radius })),
+    ...edits('clearTrees')
+      .filter((e) => e.radius)
+      .map((e) => ({ x: origin(e)[0], z: origin(e)[1], r: e.radius })),
     ...expandBusRows(park.vehicles).map((b) => ({ x: b.x, z: b.z, r: BUS_CLEARANCE })),
   ];
+  // clearTrees areas given as polygons (relative to `at`, like pave / plant)
+  const clearPolygons = edits('clearTrees').flatMap((e) => {
+    const [ox, oz] = origin(e);
+    return (e.polygons ?? []).map((poly) => poly.map(([x, z]) => [ox + x, oz + z]));
+  });
   const clearPaths = landmarks.flatMap((l) => {
     const { model, params } = placementOf(l);
     return model?.clearPaths?.(params) ?? [];
@@ -67,6 +75,7 @@ export function resolveSite(park) {
     /** Is (x, z) within `pad` meters of an area that must stay clear? */
     isCleared(x, z, pad = 0) {
       for (const c of clearCircles) if (Math.hypot(x - c.x, z - c.z) < c.r + pad) return true;
+      if (clearPolygons.some((poly) => pointInPolygon(x, z, poly))) return true;
       for (const c of clearPaths) {
         const pts = c.closed ? [...c.pts, c.pts[0]] : c.pts;
         for (let i = 1; i < pts.length; i++) if (segmentDistance(x, z, pts[i - 1], pts[i]) < c.width / 2 + pad) return true;

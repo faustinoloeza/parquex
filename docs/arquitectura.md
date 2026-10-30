@@ -137,7 +137,8 @@ modelos, autobuses) → líneas de rutas, que así se ven continuas sin pintarse
 - Árboles, autobuses y animales usan `InstancedMesh`; el viento y las banderas se animan en shaders.
 - Calidad (`app/quality.js`): nivel inicial según el equipo, bajada automática si los cuadros son lentos al
   mover el mapa, tope de FPS (y menor cuando nada se mueve). Cambiar sombras recompila shaders en segundo plano.
-- Sombras recalculadas solo al mover la vista y cada 12 cuadros; texturas procedurales con semilla y en caché.
+- Sombras recalculadas solo al mover la vista y cada 12 cuadros (en «media», a lo más cada 4 cuadros al mover:
+  `shadowEvery`); texturas procedurales con semilla y en caché.
 
 ## Parques vecinos
 

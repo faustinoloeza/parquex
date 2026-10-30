@@ -578,7 +578,7 @@ export class MapApp {
     }
     const distance = rig.distance;
     stage.updateView(distance);
-    stage.updateShadows(this.controls.target, distance);
+    stage.updateShadows(this.controls.target, distance, this.quality.preset.shadowEvery);
 
     const frame = {
       t,

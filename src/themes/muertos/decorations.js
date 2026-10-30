@@ -40,8 +40,36 @@ export const MUERTOS_STYLE = {
     rowAltar: [8, 0.75],
     cemetery: [10, 0.6],
   },
-  jarsDistance: 320, // beyond, the jars are sub-pixel: only the flames show
+  // camera distance (m) to a square of the park beyond which its jars / flowers are a pixel or less and hide
+  // (only the flames show)
+  near: { jars: 200, flowers: 420 },
 };
+
+/** Meters; candles and flowers are bucketed in squares so views of part of the park skip the rest. */
+const CELL = 300;
+
+/**
+ * Items [x, y, z, …] bucketed per CELL m square: each square's fixed ones
+ * first, then its share of the path ones (in their order), and its bounds.
+ * @returns {{ items: number[][], fixed: number, path: number, box: THREE.Box3 }[]}
+ */
+function cells(fixed, path) {
+  const out = new Map();
+  const add = (kind) => (item) => {
+    const key = `${Math.floor(item[0] / CELL)},${Math.floor(item[2] / CELL)}`;
+    if (!out.has(key)) out.set(key, { fixed: [], path: [] });
+    out.get(key)[kind].push(item);
+  };
+  fixed.forEach(add('fixed'));
+  path.forEach(add('path'));
+  return [...out.values()].map((c) => {
+    const items = [...c.fixed, ...c.path];
+    const box = new THREE.Box3();
+    for (const [x, y, z] of items) box.expandByPoint(new THREE.Vector3(x, y, z));
+    box.max.y += 2;
+    return { items, fixed: c.fixed.length, path: c.path.length, box };
+  });
+}
 
 /**
  * Día de Muertos on the map (src/themes/muertos), shaped after the festival's
@@ -277,13 +305,15 @@ export async function createMuertosLayer({
     color = new THREE.Color();
   const Y = new THREE.Vector3(0, 1, 0);
 
-  // candles: the fixed ones first, then the path ones in a shuffled order (any
-  // first n of them are spread over the park: the quality cap keeps a prefix)
-  const candles = [...fixedCandles, ...revealOrder(pathCandles.length, rnd).map((i) => pathCandles[i])];
-  const jarGeometry = new THREE.CylinderGeometry(0.065, 0.055, 0.15, 6).translate(0, 0.075, 0);
+  // candles and flowers per square of the park (cells()): the fixed ones first,
+  // then the path ones in a shuffled order (any first n of them are spread over
+  // the square: the quality cap keeps a prefix)
+  const shuffled = (list) => revealOrder(list.length, rnd).map((i) => list[i]);
+  const candleCells = cells(fixedCandles, shuffled(pathCandles));
+  const flowerCells = cells(fixedFlowers, shuffled(pathFlowers));
+  const jarGeometry = new THREE.CylinderGeometry(0.065, 0.055, 0.15, 5).translate(0, 0.075, 0);
   jarGeometry.deleteAttribute('uv');
-  const jars = new THREE.InstancedMesh(jarGeometry, new THREE.MeshBasicMaterial(), Math.max(1, candles.length));
-  jars.name = 'muertos:jars';
+  const jarMaterial = new THREE.MeshBasicMaterial();
   const flameUniforms = {
     uNight: nightUniform,
     uColor: { value: new THREE.Color(S.flame.color) },
@@ -292,19 +322,14 @@ export async function createMuertosLayer({
     uSize: { value: S.flame.radius },
     uMinPx: { value: S.flame.minPx },
   };
-  const flames = new THREE.InstancedMesh(
-    new THREE.PlaneGeometry(1, 1),
-    new THREE.ShaderMaterial({
-      uniforms: flameUniforms,
-      ...GLOW_DISC,
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    }),
-    Math.max(1, candles.length),
-  );
-  flames.name = 'muertos:flames';
-  flames.renderOrder = 2; // after the water
+  const flameGeometry = new THREE.PlaneGeometry(1, 1);
+  const flameMaterial = new THREE.ShaderMaterial({
+    uniforms: flameUniforms,
+    ...GLOW_DISC,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
   const bulbUniforms = {
     ...flameUniforms,
     uColor: { value: new THREE.Color(S.bulb.color) },
@@ -313,7 +338,7 @@ export async function createMuertosLayer({
     uMinPx: { value: S.bulb.minPx },
   };
   const lights = new THREE.InstancedMesh(
-    flames.geometry,
+    flameGeometry,
     new THREE.ShaderMaterial({
       uniforms: bulbUniforms,
       ...GLOW_DISC,
@@ -326,23 +351,35 @@ export async function createMuertosLayer({
   lights.name = 'muertos:string-lights';
   lights.renderOrder = 2;
   bulbs.forEach(([x, y, z], i) => lights.setMatrixAt(i, m.makeTranslation(x, y, z)));
-  candles.forEach(([x, y, z, c], i) => {
-    jars.setMatrixAt(i, m.makeTranslation(x, y, z));
-    jars.setColorAt(i, color.set(c));
-    flames.setMatrixAt(i, m.makeTranslation(x, y + S.flame.above, z));
+  /** per square: its jars (hidden from afar), its flames and how many of its candles are fixed / on paths */
+  const candleSets = candleCells.map((cell) => {
+    const jars = new THREE.InstancedMesh(jarGeometry, jarMaterial, cell.items.length);
+    jars.name = 'muertos:jars';
+    const flames = new THREE.InstancedMesh(flameGeometry, flameMaterial, cell.items.length);
+    flames.name = 'muertos:flames';
+    flames.renderOrder = 2; // after the water
+    cell.items.forEach(([x, y, z, c], i) => {
+      jars.setMatrixAt(i, m.makeTranslation(x, y, z));
+      jars.setColorAt(i, color.set(c));
+      flames.setMatrixAt(i, m.makeTranslation(x, y + S.flame.above, z));
+    });
+    return { ...cell, jars, flames };
   });
 
-  const flowers = [...fixedFlowers, ...revealOrder(pathFlowers.length, rnd).map((i) => pathFlowers[i])];
   const flowerMaterial = nightGlow(
     new THREE.MeshLambertMaterial({ vertexColors: true, emissive: '#ff6a00', emissiveIntensity: 0 }),
     0.5,
     0,
   );
-  const blossoms = new THREE.InstancedMesh(clumpGeometry(), flowerMaterial, Math.max(1, flowers.length));
-  blossoms.name = 'muertos:marigolds';
-  flowers.forEach(([x, y, z, s, r, c], i) => {
-    blossoms.setMatrixAt(i, m.compose(new THREE.Vector3(x, y, z), q.setFromAxisAngle(Y, r), sc.set(s, s, s)));
-    blossoms.setColorAt(i, color.set(c));
+  const clump = clumpGeometry();
+  const flowerSets = flowerCells.map((cell) => {
+    const blossoms = new THREE.InstancedMesh(clump, flowerMaterial, cell.items.length);
+    blossoms.name = 'muertos:marigolds';
+    cell.items.forEach(([x, y, z, s, r, c], i) => {
+      blossoms.setMatrixAt(i, m.compose(new THREE.Vector3(x, y, z), q.setFromAxisAngle(Y, r), sc.set(s, s, s)));
+      blossoms.setColorAt(i, color.set(c));
+    });
+    return { ...cell, blossoms };
   });
 
   const [fw, fh] = S.papel.flag;
@@ -363,7 +400,8 @@ export async function createMuertosLayer({
   );
   strings.name = 'muertos:strings';
 
-  for (const mesh of [jars, flames, lights, blossoms, flags]) {
+  const instanced = [...candleSets.flatMap((s) => [s.jars, s.flames]), ...flowerSets.map((s) => s.blossoms), lights, flags];
+  for (const mesh of instanced) {
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     mesh.computeBoundingSphere();
@@ -396,13 +434,18 @@ export async function createMuertosLayer({
     /** Fewer path candles and flowers on weaker presets (the street lamps' cap as the measure). */
     setQuality(preset) {
       const f = Math.min(1, Math.max(0.35, (preset.lamps ?? 2500) / 2500));
-      jars.count = flames.count = fixedCandles.length + Math.floor(pathCandles.length * f);
-      blossoms.count = fixedFlowers.length + Math.floor(pathFlowers.length * f);
+      for (const s of candleSets) s.jars.count = s.flames.count = s.fixed + Math.floor(s.path * f);
+      for (const s of flowerSets) s.blossoms.count = s.fixed + Math.floor(s.path * f);
     },
-    update({ distance, fovPx, camera }) {
-      jars.visible = distance < S.jarsDistance;
-      flames.visible = lights.visible = nightUniform.value > 0.001;
-      if (!flames.visible) return;
+    update({ fovPx, camera }) {
+      // jars and flowers only on the squares near the camera (a pixel or less beyond)
+      const eye = camera.position;
+      for (const s of candleSets) s.jars.visible = s.box.distanceToPoint(eye) < S.near.jars;
+      for (const s of flowerSets) s.blossoms.visible = s.box.distanceToPoint(eye) < S.near.flowers;
+      const night = nightUniform.value > 0.001;
+      for (const s of candleSets) s.flames.visible = night;
+      lights.visible = night;
+      if (!night) return;
       const h = 2 * fovPx * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
       flameUniforms.uViewport.value.set(h * camera.aspect, h);
     },
@@ -429,14 +472,17 @@ function defaultSpots(park) {
   return spots;
 }
 
-/** A clump of marigold blossoms over dark leaves (white blossoms: the instance color paints them). */
+/**
+ * A clump of marigold blossoms over dark leaves (white blossoms: the instance
+ * color paints them). Thousands of them: few triangles each (42).
+ */
 function clumpGeometry() {
   const blossoms = [
     [0, 0.24, 0, 0.21],
     [0.19, 0.18, 0.09, 0.16],
     [-0.16, 0.17, 0.11, 0.15],
     [0.04, 0.16, -0.18, 0.15],
-  ].map(([x, y, z, r]) => part(new THREE.IcosahedronGeometry(r, 0).translate(x, y, z), '#ffffff'));
+  ].map(([x, y, z, r]) => part(new THREE.OctahedronGeometry(r, 0).translate(x, y, z), '#ffffff'));
   const leaves = part(new THREE.ConeGeometry(0.3, 0.2, 5).translate(0, 0.1, 0), '#3d6b2c');
   return mergeGeometries([leaves, ...blossoms]);
 }

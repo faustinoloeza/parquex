@@ -2,7 +2,10 @@
  * @typedef {object} QualityPreset
  * @property {number} pixelRatio   maximum device pixel ratio
  * @property {number} shadows      shadow map size (0 = no shadows)
- * @property {number} lod          camera distance (m) beyond which trees use cheap models
+ * @property {number} shadowEvery  frames between shadow map renders at most (Stage.updateShadows): phones
+ *           re-render it less often while the view moves
+ * @property {number} lod          camera distance (m) beyond which trees use cheap models (~90 → ~20
+ *           triangles; a tree there is a few pixels wide)
  * @property {boolean} fauna       animated animals
  * @property {number} maxFps       frame rate cap while the view moves
  * @property {number} idleFps      frame rate cap when nothing moves (animations only)
@@ -22,6 +25,7 @@ export const QUALITY_PRESETS = {
   high: {
     pixelRatio: 2,
     shadows: 2048,
+    shadowEvery: 1,
     lod: 460,
     fauna: true,
     maxFps: 60,
@@ -36,7 +40,8 @@ export const QUALITY_PRESETS = {
   medium: {
     pixelRatio: 1.5,
     shadows: 1024,
-    lod: 320,
+    shadowEvery: 4,
+    lod: 220,
     fauna: true,
     maxFps: 60,
     idleFps: 30,
@@ -50,7 +55,8 @@ export const QUALITY_PRESETS = {
   low: {
     pixelRatio: 1,
     shadows: 0,
-    lod: 200,
+    shadowEvery: 4,
+    lod: 150,
     fauna: false,
     maxFps: 30,
     idleFps: 20,
