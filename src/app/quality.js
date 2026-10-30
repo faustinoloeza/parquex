@@ -105,8 +105,10 @@ export class QualityManager {
     this.autoLevel = autoLevel;
     this.preset = QUALITY_PRESETS[autoLevel];
     this.perf = { acc: 0, frames: 0, slow: 0 };
-    /** called when a change needs shaders recompiled (shadows on/off) */
+    /** called when a change needs shaders recompiled (shadows on/off); returns a promise */
     this.onRecompile = null;
+    /** called after the canvas was resized (it is blank until drawn) */
+    this.onResize = null;
   }
 
   /** @param {'auto' | 'high' | 'medium' | 'low'} mode */
@@ -114,7 +116,6 @@ export class QualityManager {
     this.mode = mode;
     const preset = (this.preset = QUALITY_PRESETS[mode === 'auto' ? this.autoLevel : mode]);
     const { renderer, sun } = this.stage;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, preset.pixelRatio));
     const shadows = preset.shadows > 0;
     const recompile = shadows !== sun.castShadow;
     renderer.shadowMap.enabled = shadows;
@@ -125,8 +126,17 @@ export class QualityManager {
       sun.shadow.map = null;
     }
     for (const layer of this.layers) layer.setQuality?.(preset);
-    this.stage.resize();
-    if (recompile) this.onRecompile?.();
+    // a new pixel ratio resizes the canvas, which clears it: with shaders to
+    // compile first (rendering pauses meanwhile) it waits for them, so the last
+    // frame stays on screen, and the next one is drawn at once (onResize)
+    const pixelRatio = Math.min(window.devicePixelRatio, preset.pixelRatio);
+    const resize = () => {
+      if (renderer.getPixelRatio() !== pixelRatio) renderer.setPixelRatio(pixelRatio);
+      this.stage.resize();
+      this.onResize?.();
+    };
+    if (recompile && this.onRecompile) this.onRecompile().then(resize);
+    else resize();
   }
 
   /**
