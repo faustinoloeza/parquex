@@ -42,6 +42,30 @@ async function boot() {
   let themeMode = forcedThemeMode() ?? (THEME_MODES.includes(savedTheme) ? savedTheme : 'auto');
   let theme = activeTheme(themeMode);
   applyTheme(theme);
+  // a festival's program, fetched once (a failed request is tried again next time)
+  const programs = new Map();
+  const festivalProgram = ({ park, file }) => {
+    const url = `${BASE}parks/${park}/${file}`;
+    if (!programs.has(url))
+      programs.set(
+        url,
+        fetch(url)
+          .then((res) => (res.ok ? res.json() : null))
+          .catch(() => {
+            programs.delete(url);
+            return null;
+          }),
+      );
+    return programs.get(url);
+  };
+  // the theme's code (its decoration, its page side) and its festival's program
+  // download alongside the map, not one after the other once it is built
+  if (theme) {
+    const ignore = () => {};
+    theme.preload?.().catch(ignore);
+    import('./ui/theme-ui.js').catch(ignore);
+    if (theme.festival?.park === parkKey) festivalProgram(theme.festival);
+  }
 
   let t = translator(lang);
   const loading = createLoadingScreen(root, t, theme?.tagline && localized(theme.tagline, lang));
@@ -109,14 +133,10 @@ async function boot() {
     const f = theme?.festival;
     festival = null;
     if (!f || app.parkDef.key !== f.park) return;
-    try {
-      const res = await fetch(`${BASE}parks/${f.park}/${f.file}`);
-      const program = res.ok ? await res.json() : null;
-      // an old year's program never shows: only until its last day
-      if (program && program.days.at(-1) >= parkDate()) festival = { info: f, program, places: f.places[f.park] ?? {} };
-    } catch {
-      // offline: the theme shows without its program
-    }
+    // offline: the theme shows without its program
+    const program = await festivalProgram(f);
+    // an old year's program never shows: only until its last day
+    if (program && program.days.at(-1) >= parkDate()) festival = { info: f, program, places: f.places[f.park] ?? {} };
   };
   const phone = matchMedia(MOBILE);
   let sidebarOpen = !debug.nosidebar;
@@ -189,6 +209,8 @@ async function boot() {
       },
     });
     document.title = `${t(current.labelKey)} 3D`;
+    // an open phone sheet stays open (rebuilt once the theme's altars arrive)
+    const sheetOpen = !!activities?.isOpen;
     sidebar?.el.remove();
     activities?.remove();
     chips?.remove();
@@ -263,6 +285,7 @@ async function boot() {
     };
     if (phone.matches) {
       activities = createActivitiesSheet(root, { ...common, festival: festivalPanel, onToggle: (open) => topbar.setListOpen(open) });
+      if (sheetOpen) activities.open();
       chips = createPoiChips(root, {
         park: app.park,
         lang,
@@ -323,6 +346,8 @@ async function boot() {
 
   app.start({ frames: debug.still ? 4 : Infinity });
   loading.done();
+  // the theme's decoration comes once the map is on screen; its altars then join the markers and the program
+  app.addThemeDecoration().then((added) => added && buildChrome(app.parkDef));
   // unofficial-site notice, once per device (not over screenshots)
   if (!debug.still) disclaimer.open();
   window.__app = app; // handy for debugging from the console

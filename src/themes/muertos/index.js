@@ -11,6 +11,9 @@ import { FESTIVAL } from './festival.js';
 const PLACES = { xc: xcPlaces };
 const ROWS = { xc: xcRows };
 
+/** The decoration's code (its own chunk), fetched once. */
+const loadDecorations = () => import('./decorations.js');
+
 /** @type {import('../index.js').Theme} */
 export default {
   key: 'muertos',
@@ -43,8 +46,9 @@ export default {
     shadow: 0.45,
     exposure: 1.05,
   },
+  preload: loadDecorations,
   async decorations(ctx) {
-    const { createMuertosLayer } = await import('./decorations.js');
+    const { createMuertosLayer } = await loadDecorations();
     const places = Object.entries(PLACES[ctx.park.key] ?? {})
       .filter(([, p]) => p?.altar)
       .map(([name, p]) => ({ x: p.x, z: p.z, at: typeof p.altar === 'object' ? p.altar : null, place: name }));

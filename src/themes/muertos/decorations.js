@@ -10,6 +10,9 @@ import { BLOSSOMS, JARS, PAPEL, altarGeometry, calaverita, part } from './altars
 
 const TAU = 2 * Math.PI;
 
+/** Lets the browser draw a frame between the heavy steps (the map is already on screen). */
+const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => resolve()));
+
 /**
  * Sizes and spacing (m), and the light the decoration adds to the lamps' light
  * map at night (layers/lamps.js → ExtraLight): orange lamps, an orange glow
@@ -47,7 +50,8 @@ export const MUERTOS_STYLE = {
  * the paths around the altars, and tiered altars (candles, marigold arch,
  * calaveras, petal carpet) at the festival's places — or at the entrance and a
  * few activities in other parks. The flames are glowing dots like the lamp
- * heads; the light reaches the ground through the lamps' light map.
+ * heads; the light reaches the ground through the lamps' light map. It yields
+ * to the browser between steps: on phones it takes a second or more.
  *
  * @param {{ park: object, parkDef: import('../../parks/define.js').ParkDefinition,
  *   heightAt: (x: number, z: number) => number, surfaceAt: (x: number, z: number) => number,
@@ -56,9 +60,9 @@ export const MUERTOS_STYLE = {
  *   vegetation?: ArrayBuffer, places?: { x: number, z: number, at?: object | null }[], rows?: object[] }} ctx
  *   places: where the festival altars go (default: entrance + activities); rows: altars beside a stretch of a
  *   route ({ route, from: [x, z], to: [x, z], spacing, styles }); vegetation: the park's trees (kept clear)
- * @returns {import('../../layers/index.js').Layer & { theme: string }}
+ * @returns {Promise<import('../../layers/index.js').Layer & { theme: string }>}
  */
-export function createMuertosLayer({
+export async function createMuertosLayer({
   park,
   parkDef,
   heightAt,
@@ -109,6 +113,8 @@ export function createMuertosLayer({
         pick(BLOSSOMS),
       ]);
 
+  await nextFrame();
+
   // marigold pots, each with a few candles, all over the paved plazas
   const plazaSpots = [];
   if (lamps.cover) {
@@ -140,6 +146,8 @@ export function createMuertosLayer({
     }
     pools.push([l.x, l.z, p.radius + S.light.cemetery[0], S.light.cemetery[1]]);
   }
+
+  await nextFrame();
 
   // ---------------------------------------------------------- the altars
   const spots = places.length ? places : defaultSpots(park);
@@ -176,6 +184,8 @@ export function createMuertosLayer({
     pools.push([x, z, ...pool]);
   };
   altars.forEach((a, i) => addAltar('tiers', a, { skull: i < 2 }));
+
+  await nextFrame();
 
   // rows of altars on the grass beside a stretch of a route, clear of paths, trees and ruins
   if (rows.length) {
@@ -224,6 +234,7 @@ export function createMuertosLayer({
         addAltar(style, spot, undefined, S.light.rowAltar);
         altars.push({ ...spot, style, place: route.name });
       });
+      await nextFrame();
     }
   }
 
