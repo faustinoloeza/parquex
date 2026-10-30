@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <script>(function () {
+  var base = "/parquex/", parks = ["xc","xh","xp","xs","xo"];
+  var files = typeof DecompressionStream === 'undefined' ? ["park.json","height.bin","vegetation.bin","ground/0-0-0.webp","water.png","buildings.json","paving.png"] : ["park.json","height.bin.gz","vegetation.bin.gz","ground/0-0-0.webp","water.webp","buildings.json","paving.png"];
+  var path = location.pathname.indexOf(base) === 0 ? location.pathname.slice(base.length) : location.pathname;
+  var key = (path.split('/').filter(Boolean)[0] || '').toLowerCase();
+  if (parks.indexOf(key) < 0) key = "xc";
+  files.forEach(function (file) {
+    var link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'fetch';
+    link.crossOrigin = 'anonymous';
+    link.href = base + 'parks/' + key + '/' + file;
+    document.head.appendChild(link);
+  });
+})();</script>
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#102734" />
+    <title>Xcaret Maps</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- the font's stylesheet does not hold the first paint back (system font until it arrives) -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media = 'all'"
+    />
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet" /></noscript>
+    <script type="module" crossorigin src="/parquex/assets/index-KHmZH3Lp.js"></script>
+    <link rel="modulepreload" crossorigin href="/parquex/assets/three-B0KYRu_O.js">
+    <link rel="stylesheet" crossorigin href="/parquex/assets/index-DLrxquf2.css">
+  </head>
+  <body>
+    <noscript>Necesitas habilitar JavaScript para ver el mapa.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

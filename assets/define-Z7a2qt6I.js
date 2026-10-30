@@ -1,0 +1,1 @@
+function e(e){return{routes:[],landmarks:[],edits:[],vehicles:[],fauna:{},activities:[],services:[],...e}}export{e as t};
