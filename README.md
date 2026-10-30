@@ -90,6 +90,13 @@ La compilación prepara el sitio para que el mapa abra lo antes posible (`pipeli
   una hora los datos de `parks/`, que después se siguen sirviendo al instante mientras se revisa si hay una copia
   nueva.
 - **Fuentes:** la hoja de Montserrat no frena la primera pintura.
+- **JavaScript en partes:** al abrir solo se descarga lo que la página usa.
+  - Siempre: la app (unos 95 kB comprimidos) y three.js en un archivo propio (unos 156 kB). three.js cambia
+    poco, así que sigue en la caché del navegador aunque se publique una versión nueva de la app.
+  - Al abrir: la definición del parque abierto (`src/parks/catalog.js → loadPark`; los demás, al cambiar de
+    parque) y los textos de su idioma (`src/i18n → loadLanguage`).
+  - Bajo demanda: la navegación a pie (`src/app/walking.js`), al tocar "Ir" o "Cómo llegar"; la parte de
+    página de un tema (`src/ui/theme-ui.js`) y su decoración 3D, solo mientras hay un tema.
 
 En 4G lento (3 Mbps, 150 ms), abrir Xcaret pasa de 1.4 MB a 0.95 MB descargados.
 

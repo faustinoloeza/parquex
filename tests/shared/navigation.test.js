@@ -14,8 +14,9 @@ import {
   walkMinutes,
   walkerAt,
 } from '#shared/navigation.js';
-import { translator } from '../../src/i18n/index.js';
+import { loadLanguage, translator } from '../../src/i18n/index.js';
 
+await loadLanguage('es');
 const es = translator('es');
 const park = (key) => JSON.parse(readFileSync(new URL(`../../public/parks/${key}/park.json`, import.meta.url)));
 

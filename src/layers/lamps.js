@@ -148,6 +148,7 @@ export function createLampsLayer({ park, heightAt, buildings, landmarks, paving,
   const allMatrices = [posts, heads].map((mesh) => mesh.instanceMatrix.array.slice());
   let shown = -1;
   let extra = null;
+  let disposed = false;
   const lamps = [];
   /** Shows at most `max` lamps (an even subset) and redraws the light map with them. */
   function show(max, redraw = false) {
@@ -184,6 +185,8 @@ export function createLampsLayer({ park, heightAt, buildings, landmarks, paving,
     /** Light of a seasonal theme (null: none); redraws the light map. */
     setExtraLight(light) {
       extra = light;
+      // a theme layer let go after this one (park switch): nothing to redraw, the paving is freed
+      if (disposed) return;
       headUniforms.uColor.value.set(light?.lampColor ?? NIGHT_COLORS.lamp);
       headUniforms.uCore.value = light?.lampCore ?? 1;
       if (shown >= 0) show(shown, true);
@@ -197,6 +200,7 @@ export function createLampsLayer({ park, heightAt, buildings, landmarks, paving,
       headUniforms.uViewport.value.set(h * camera.aspect, h);
     },
     dispose() {
+      disposed = true;
       if (lightMap.value?.userData.lampLightMap) lightMap.value.dispose();
       paving?.close?.();
     },

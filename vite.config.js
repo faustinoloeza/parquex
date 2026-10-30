@@ -12,6 +12,15 @@ export default defineConfig({
     gzipBinaryData(), // build: gzip copies of the binary data (hosts only compress text)
   ],
   server: { host: true, port: 5173 },
-  build: { chunkSizeWarningLimit: 1200 },
+  build: {
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        // three.js in a file of its own: it changes far less often than the app, so a deploy
+        // leaves it in the browser's cache (public/_headers: a year)
+        manualChunks: (id) => (id.includes('/node_modules/three/') ? 'three' : undefined),
+      },
+    },
+  },
   test: { include: ['tests/**/*.test.js'] },
 });

@@ -6,23 +6,18 @@ import { readPreference, writePreference } from './app/preferences.js';
 import { TIME_MODES, forcedTimeMode } from './app/time-of-day.js';
 import { THEME_MODES, activeTheme, forcedThemeMode } from './themes/index.js';
 import { applyTheme } from './ui/theme.js';
-import { PARKS } from './parks/index.js';
-import { RTL, localized, translator } from './i18n/index.js';
+import { loadPark } from './parks/catalog.js';
+import { RTL, loadLanguage, localized, translator } from './i18n/index.js';
 import { createHeader } from './ui/header.js';
 import { createSidebar } from './ui/sidebar/index.js';
 import { createActivitiesSheet } from './ui/activities-sheet.js';
 import { createPoiChips } from './ui/poi-chips.js';
-import { createFestivalPanel } from './ui/festival.js';
-import { createFestivalMarkers } from './ui/festival-markers.js';
-import { createAltarMarkers } from './ui/altar-markers.js';
 import { parkDate, sessionsOn } from './themes/muertos/festival.js';
 import { createToolbar } from './ui/toolbar.js';
 import { createAttribution } from './ui/attribution.js';
 import { createLoadingScreen } from './ui/loading-screen.js';
 import { createDisclaimer } from './ui/disclaimer.js';
 import { createStatsOverlay } from './ui/stats-overlay.js';
-import { createDirections } from './ui/directions.js';
-import { Navigation } from './app/navigation.js';
 
 const MOBILE = '(max-width: 640px)';
 
@@ -33,7 +28,8 @@ async function boot() {
   document.documentElement.lang = lang;
   document.documentElement.dir = RTL.has(lang) ? 'rtl' : 'ltr';
   const debug = debugFlags();
-  const parkDef = PARKS[parkKey];
+  // only what this page needs: its park's definition and its language's strings
+  const [parkDef] = await Promise.all([loadPark(parkKey), loadLanguage(lang)]);
 
   const root = document.getElementById('root');
   const stage = document.createElement('div');
@@ -96,6 +92,8 @@ async function boot() {
   // the theme's altars on the map (shown with the festival's places)
   let altarMarkers = null;
   let festivalShown = true;
+  // the page side of a theme (festival program, altar markers: ui/theme-ui.js), loaded only while one shows
+  let themeUI = null;
   const switchTheme = (next) => {
     theme = next;
     applyTheme(theme);
@@ -107,6 +105,7 @@ async function boot() {
     if (next !== theme) switchTheme(next);
   }, 60_000);
   const loadFestival = async () => {
+    themeUI = theme ? await import('./ui/theme-ui.js') : null;
     const f = theme?.festival;
     festival = null;
     if (!f || app.parkDef.key !== f.park) return;
@@ -122,21 +121,18 @@ async function boot() {
   const phone = matchMedia(MOBILE);
   let sidebarOpen = !debug.nosidebar;
 
-  // walking navigation: directions panel + guidance (app/navigation.js)
+  // walking navigation (app/walking.js): loaded on the first "Go" / "Directions"
   let navigation = null;
-  const directions = createDirections(root, {
-    t: () => app.t,
-    lang,
-    onStart: () => navigation.begin(),
-    onSimulate: () => navigation.begin({ simulate: true }),
-    onEnd: () => navigation.end(),
-    onPick: () => navigation.pickStart(),
-    onCancelPick: () => navigation.cancelPick(),
-    onClearManual: () => navigation.clearManual(),
-    onSpeed: (k) => navigation.setSpeed(k),
-    onRecenter: () => navigation.recenter(),
-  });
-  const onNavLayout = (mode) => {
+  let walking = null;
+  const directionsTo = (poi) => {
+    walking ??= import('./app/walking.js').then(({ startWalking }) => {
+      navigation = startWalking({ root, app, lang, onLayout: onNavLayout });
+      window.__nav = navigation; // handy for debugging from the console
+      return navigation;
+    });
+    return walking.then((nav) => nav.directions(poi));
+  };
+  const onNavLayout = (mode, directions) => {
     const html = document.documentElement;
     html.classList.toggle('gx-nav-preview', mode === 'preview');
     html.classList.toggle('gx-nav-active', mode === 'active');
@@ -146,8 +142,7 @@ async function boot() {
     else if (mode === 'active') app.setInset(0, 0);
     else syncInset();
   };
-  navigation = new Navigation(app, directions, { lang, onLayout: onNavLayout });
-  app.onDirections = (poi) => navigation.directions(poi);
+  app.onDirections = directionsTo;
 
   const syncInset = () => {
     if (!sidebar) {
@@ -204,7 +199,7 @@ async function boot() {
     app.focusRoute(null);
     const altars = app.world.parkLayers.find((l) => l.theme)?.altars ?? [];
     if (altars.length) {
-      altarMarkers = createAltarMarkers(app.stage.scene, {
+      altarMarkers = themeUI.createAltarMarkers(app.stage.scene, {
         altars,
         lang,
         t,
@@ -223,7 +218,7 @@ async function boot() {
     let festivalPanel = null;
     if (festival) {
       const { program, places, info } = festival;
-      festivalMarkers = createFestivalMarkers(app.stage.scene, {
+      festivalMarkers = themeUI.createFestivalMarkers(app.stage.scene, {
         program,
         places,
         lang,
@@ -231,7 +226,7 @@ async function boot() {
         heightAt: app.world.heightAt,
         onChange: () => (app.labelsDirty = true),
       });
-      festivalPanel = createFestivalPanel({
+      festivalPanel = themeUI.createFestivalPanel({
         program,
         places,
         name: info.name,
@@ -263,7 +258,7 @@ async function boot() {
       lang,
       t,
       onSelect: (poi) => app.select(poi),
-      onDirections: (poi) => navigation.directions(poi),
+      onDirections: directionsTo,
       onAbout: () => disclaimer.open({ force: true }),
     };
     if (phone.matches) {
@@ -300,7 +295,7 @@ async function boot() {
   // language reloads the page
   const navigateOrFocus = async (park, language) => {
     if (language === lang && (await app.focusableParks()).includes(park)) {
-      if (await app.focusPark(PARKS[park])) return;
+      if (await app.focusPark(await loadPark(park))) return;
     }
     navigate(park, language);
   };
@@ -308,7 +303,7 @@ async function boot() {
   app.onFocus = (_, def) => {
     if (!fromHistory) history.pushState(null, '', routeUrl(def.key, lang) + location.search);
     // a walk belongs to one park: switching parks cancels it
-    navigation.reset();
+    navigation?.reset();
     loadFestival().then(() => buildChrome(def));
   };
   window.addEventListener('popstate', async () => {
@@ -331,7 +326,6 @@ async function boot() {
   // unofficial-site notice, once per device (not over screenshots)
   if (!debug.still) disclaimer.open();
   window.__app = app; // handy for debugging from the console
-  window.__nav = navigation;
 }
 
 boot();
