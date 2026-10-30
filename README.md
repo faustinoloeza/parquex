@@ -75,6 +75,24 @@ la app lee la ruta. Con el repositorio conectado en Cloudflare (**Workers & Page
 Builds**): comando de compilación **`npm run build`**, comando de implementación **`npx wrangler deploy`**,
 directorio raíz vacío. Se sirve en la raíz del dominio (`base` `/`), así que no hace falta `BASE_PATH`.
 
+## Carga rápida
+
+La compilación prepara el sitio para que el mapa abra lo antes posible (`pipeline/vite-fast-load.js`):
+
+- **Compresión:** los servidores (Cloudflare, GitHub Pages) comprimen al vuelo el texto (JS, CSS, JSON), pero no
+  los binarios. Por eso cada `parks/<key>/*.bin` lleva una copia gzip (`*.bin.gz`, la mitad del tamaño) y cada
+  `water.png` una copia WebP sin pérdida (`water.webp`, menos de la mitad y los mismos valores). En producción la
+  app pide las copias y descomprime el gzip en el navegador (`DecompressionStream`); si una copia falta, usa el
+  original (`src/app/assets.js`).
+- **Precarga:** un script en `index.html` empieza a bajar los datos del parque de la URL (park.json, alturas,
+  árboles, suelo, agua…) mientras se descarga el JavaScript de la app.
+- **Caché:** `public/_headers` (Cloudflare) guarda un año los paquetes de `assets/` (llevan hash en el nombre) y
+  una hora los datos de `parks/`, que después se siguen sirviendo al instante mientras se revisa si hay una copia
+  nueva.
+- **Fuentes:** la hoja de Montserrat no frena la primera pintura.
+
+En 4G lento (3 Mbps, 150 ms), abrir Xcaret pasa de 1.4 MB a 0.95 MB descargados.
+
 ## Publicación en GitHub Pages
 
 `pnpm deploy:pages` (`pipeline/deploy-pages.js`) compila el sitio con `BASE_PATH=/<repo>/` (la `base` de Vite) y

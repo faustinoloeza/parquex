@@ -3,10 +3,44 @@ import { loadTexture } from '../graphics/texture-loader.js';
 import { PAVING_FILE } from '#shared/formats/paving.js';
 import { BASE } from './routing.js';
 
-async function fetchOK(url) {
-  const res = await fetch(url);
+async function fetchOK(url, options) {
+  const res = await fetch(url, options);
   if (!res.ok) throw new Error(`${res.status} ${url}`);
   return res;
+}
+
+/** Production builds carry gzip copies of the binary data (pipeline/vite-fast-load.js). */
+const PACKED = import.meta.env?.PROD === true && typeof DecompressionStream !== 'undefined';
+
+/**
+ * A binary data file (height.bin, vegetation.bin) as an ArrayBuffer. In
+ * production, its gzip copy (`<file>.gz`, about half the size: hosts do not
+ * compress binary files on the fly), unpacked here; the plain file when the
+ * copy is missing (the host answers with the page instead).
+ * @param {string} url
+ * @param {{ signal?: AbortSignal }} [options]
+ */
+async function fetchBinary(url, { signal } = {}) {
+  if (PACKED) {
+    const res = await fetch(`${url}.gz`, { signal });
+    if (res.ok && !res.headers.get('content-type')?.includes('text/html')) {
+      const bytes = new Uint8Array(await res.arrayBuffer());
+      // still gzip (1f 8b): unpack; otherwise the host sent it with Content-Encoding and the browser already did
+      if (bytes[0] !== 0x1f || bytes[1] !== 0x8b) return bytes.buffer;
+      return new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+    }
+  }
+  return (await fetchOK(url, { signal })).arrayBuffer();
+}
+
+/**
+ * The water map of a park (shared/formats/water.js): in production its
+ * lossless WebP copy (less than half the size), else — or when the copy is
+ * missing — the PNG.
+ */
+function loadWater(baseUrl, options) {
+  const png = () => loadTexture(`${baseUrl}water.png`, options);
+  return PACKED ? loadTexture(`${baseUrl}water.webp`, options).catch(png) : png();
 }
 
 /**
@@ -32,9 +66,9 @@ export async function loadParkAssets(key, { reference = false, onProgress = () =
   const [park, groundOverview, waterTexture, heightBuffer, vegetationBuffer, buildings, paving] = await Promise.all([
     reuse(cached?.park, () => fetchOK(`${baseUrl}park.json`).then((r) => r.json())),
     reuse(reference ? null : cached?.ground, () => loadTexture(groundUrl)),
-    reuse(cached?.waterTexture, () => loadTexture(`${baseUrl}water.png`, { data: true })),
-    reuse(cached?.heightBuffer, () => fetchOK(`${baseUrl}height.bin`).then((r) => r.arrayBuffer())),
-    reuse(cached?.vegetationBuffer, () => fetchOK(`${baseUrl}vegetation.bin`).then((r) => r.arrayBuffer())),
+    reuse(cached?.waterTexture, () => loadWater(baseUrl, { data: true })),
+    reuse(cached?.heightBuffer, () => fetchBinary(`${baseUrl}height.bin`)),
+    reuse(cached?.vegetationBuffer, () => fetchBinary(`${baseUrl}vegetation.bin`)),
     fetchOK(`${baseUrl}buildings.json`)
       .then((r) => r.json())
       .then(tick),
@@ -72,14 +106,10 @@ export async function loadParkJson(key) {
  */
 export async function loadNeighborAssets(key, { signal } = {}) {
   const baseUrl = `${BASE}parks/${key}/`;
-  const buffer = (name) =>
-    fetch(baseUrl + name, { signal }).then((r) => {
-      if (!r.ok) throw new Error(`${r.status} ${baseUrl + name}`);
-      return r.arrayBuffer();
-    });
+  const buffer = (name) => fetchBinary(baseUrl + name, { signal });
   const results = await Promise.allSettled([
     loadTexture(baseUrl + groundTilePath(groundTileId(0, 0, 0)), { signal, anisotropy: 4 }),
-    loadTexture(`${baseUrl}water.png`, { signal, data: true }),
+    loadWater(baseUrl, { signal, data: true }),
     buffer('height.bin'),
     buffer('vegetation.bin'),
   ]);
