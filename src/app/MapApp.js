@@ -62,6 +62,8 @@ export class MapApp {
     this.focusedRoute = null;
     this.labelsDirty = true;
     this.paused = false;
+    /** the render loop runs (start()) */
+    this.running = false;
     this.lastMove = 0;
     this.neighborsStarted = false;
     /** walking route and walker (layers/nav-route.js), added with the navigation (app/walking.js) */
@@ -144,6 +146,7 @@ export class MapApp {
     }
     this.quality = new QualityManager(this.stage, this.world.layers, { adaptive: !this.debug.still, autoLevel });
     this.quality.onRecompile = () => this.compileShaders();
+    this.quality.onResize = () => this.redraw();
     this.quality.set(this.initialQuality);
     this.routes = routes;
     this.bindEvents();
@@ -446,7 +449,7 @@ export class MapApp {
 
   /** Width (px) covered by the sidebar on the left (and height of a bottom sheet); the map re-centers. */
   setInset(px, bottom = 0) {
-    this.stage.setInset(px, bottom);
+    if (this.stage.setInset(px, bottom)) this.redraw();
     this.labelsDirty = true;
   }
 
@@ -474,8 +477,18 @@ export class MapApp {
   }
 
   resize() {
-    this.stage.resize();
+    if (this.stage.resize()) this.redraw();
     this.labelsDirty = true;
+  }
+
+  /**
+   * Draws a frame now, outside the loop: after a resize the canvas is blank
+   * until the next frame, and idle frames are spaced out (QualityPreset.idleFps).
+   */
+  redraw() {
+    if (!this.running || this.paused) return;
+    this.labelsDirty = true;
+    this.frame();
   }
 
   /** Renderer statistics of the last frame. */
@@ -498,6 +511,7 @@ export class MapApp {
    *        streamed data has arrived (screenshots); sets window.__ready
    */
   start({ frames = Infinity } = {}) {
+    this.running = true;
     let n = 0,
       last = -Infinity;
     const startedAt = performance.now();

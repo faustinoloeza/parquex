@@ -6,6 +6,7 @@ import { RENDER_LAYER } from './render-layers.js';
 
 const tmpA = new THREE.Color(),
   tmpB = new THREE.Color();
+const tmpSize = new THREE.Vector2();
 
 export const SUN = new THREE.Vector3(...SUN_DIRECTION).normalize();
 
@@ -167,13 +168,21 @@ export class Stage {
   /**
    * Shifts the projection so the map is centered in the area not covered by
    * the sidebar (desktop, `px` on the left) or a bottom sheet (`bottom` px).
+   * @returns {boolean} the canvas was resized (see resize())
    */
   setInset(px, bottom = 0) {
     this.inset = px;
     this.insetBottom = bottom;
-    this.resize();
+    return this.resize();
   }
 
+  /**
+   * Fits the camera and the canvas to the container. Resizing a canvas clears
+   * it (even to the same size), so it only happens when the size changed;
+   * the caller then draws a frame at once (MapApp.redraw), or the cleared
+   * canvas would show — a flicker — until the next frame.
+   * @returns {boolean} the canvas was resized
+   */
   resize() {
     const w = this.container.clientWidth,
       h = this.container.clientHeight;
@@ -181,8 +190,11 @@ export class Stage {
     if (this.inset || this.insetBottom) this.camera.setViewOffset(w, h, -this.inset / 2, (this.insetBottom ?? 0) / 2, w, h);
     else this.camera.clearViewOffset();
     this.camera.updateProjectionMatrix();
+    const size = this.renderer.getSize(tmpSize);
+    if (size.x === w && size.y === h) return false;
     this.renderer.setSize(w, h);
     this.labels.setSize(w, h);
+    return true;
   }
 
   beginFrame() {

@@ -21,6 +21,8 @@ export const JARS = ['#ff4d6d', '#ff8fab', '#c77dff', '#ffb703', '#fb8500', '#4c
 export const BLOSSOMS = ['#ff9800', '#ffa726', '#ff8f00', '#ffb300', '#f57c00', '#ffca28'];
 /** Stripes of a sarape. */
 const SARAPE = ['#d62828', '#f77f00', '#fcbf49', '#2a9d8f', '#264653', '#e63946', '#8338ec', '#06d6a0', '#ff006e', '#3a86ff'];
+/** Height of the flat pieces on the ground (carpets, cloths): clear of it, or the two flicker (z-fighting) from afar. */
+const FLAT = 0.06;
 const BONE = '#f4f1ea',
   WOOD = '#6b4a2f',
   WHITE = '#f7f4ee',
@@ -116,7 +118,7 @@ function stalks(out, rnd, x, z, { n = 3, h = 2.4, color = '#7cb342' } = {}) {
 
 /** Petal carpet from z0 to z1 (x from -w/2 to w/2), with jar candles along both edges every `gap` m. */
 function carpet(out, rnd, { w, z0, z1, gap = 0.45, jars = JARS, color = MARIGOLD }) {
-  out.parts.push(box(w, 0.025, z1 - z0, 0, 0.013, (z0 + z1) / 2, color));
+  out.parts.push(box(w, 0.025, z1 - z0, 0, FLAT, (z0 + z1) / 2, color));
   for (let z = z0 + 0.2; z <= z1; z += gap) for (const s of [-1, 1]) out.candles.push([s * (w / 2 + 0.22), 0, z, pick(rnd, jars)]);
 }
 
@@ -128,8 +130,8 @@ function tiers(rnd, { skull = false } = {}) {
   const cloth = [PURPLE, PINK, MARIGOLD];
   out.parts.push(box(4, 0.14, 2.6, 0, 0.07, 0, '#3b2a20'));
   // petal carpet in front, as far as the path, with a cross of petals near the altar
-  out.parts.push(box(1.1, 0.03, 2, 0, 0.02, 2.3, MARIGOLD));
-  out.parts.push(box(2, 0.035, 0.45, 0, 0.03, 1.85, '#ff6d00'));
+  out.parts.push(box(1.1, 0.03, 2, 0, FLAT, 2.3, MARIGOLD));
+  out.parts.push(box(2, 0.035, 0.45, 0, FLAT + 0.012, 1.85, '#ff6d00'));
   for (let k = 0; k < 4; k++) out.candles.push([-0.75, 0.03, 1.5 + k * 0.6, WAX], [0.75, 0.03, 1.5 + k * 0.6, WAX]);
   let y = 0.14;
   [
@@ -208,9 +210,9 @@ function sarape(rnd) {
   for (let x = -1.5; x <= 1.5; x += 0.5) out.candles.push([x, 0.82, 0.18, WAX]);
   out.parts.push(...skeleton(-2.05, -0.35));
   // path of sarapes, petal lines and white paper luminarias
-  for (let k = 0; k < 8; k++) out.parts.push(box(0.9, 0.02, 0.4, 0, 0.012, 0.75 + k * 0.42, SARAPE[(k * 3) % SARAPE.length]));
+  for (let k = 0; k < 8; k++) out.parts.push(box(0.9, 0.02, 0.4, 0, FLAT, 0.75 + k * 0.42, SARAPE[(k * 3) % SARAPE.length]));
   for (const s of [-1, 1]) {
-    out.parts.push(box(0.24, 0.025, 3.6, s * 0.95, 0.013, 2.2, MARIGOLD));
+    out.parts.push(box(0.24, 0.025, 3.6, s * 0.95, FLAT, 2.2, MARIGOLD));
     for (let z = 0.6; z <= 4; z += 0.48) {
       out.parts.push(box(0.12, 0.16, 0.12, s * 1.3, 0.08, z, '#fbfaf5'));
       out.candles.push([s * 1.3, 0.1, z, WAX]);
@@ -324,7 +326,7 @@ function cake(rnd) {
   out.parts.push(box(0.3, 0.5, 0.3, 0, y + 0.25, cz, WHITE));
   out.parts.push(part(new THREE.ConeGeometry(0.26, 0.4, 4).rotateY(Math.PI / 4).translate(0, y + 0.7, cz), '#7b5bb8'));
   // white cloth with a cross of candles, pots of marigolds and baskets of fruit around
-  out.parts.push(box(1.7, 0.02, 1.9, 0, 0.012, 1.95, WHITE));
+  out.parts.push(box(1.7, 0.02, 1.9, 0, FLAT, 1.95, WHITE));
   for (let k = 0; k < 6; k++) out.candles.push([0, 0.03, 1.2 + k * 0.28, WAX]);
   for (const x of [-0.56, -0.28, 0.28, 0.56]) out.candles.push([x, 0.03, 1.48, WAX]);
   for (let a = -2.3; a <= 2.3; a += 0.38) {
