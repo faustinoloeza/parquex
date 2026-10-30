@@ -9,3 +9,6 @@
 @import './sheet.css';
 @import './navigation.css';
 @import './disclaimer.css';
+@import './festival.css';
+/* seasonal themes (src/themes) go last: they override the tokens above */
+@import './themes/muertos.css';

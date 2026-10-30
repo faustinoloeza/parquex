@@ -3,6 +3,10 @@
 :root {
   --navy: #102734;
   --sky: #76d1ff;
+  --navy-2: #1d4256; /* second stop of navy gradients */
+  --gold: #ffd166;
+  --link: #0369a1;
+  --backdrop: #dde8ee; /* page behind the map */
   /* Android app palette */
   --teal: #0e7c86;
   --teal-container: #b8ecee;
@@ -31,7 +35,7 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #dde8ee;
+  background: var(--backdrop);
   font-family:
     Montserrat,
     system-ui,

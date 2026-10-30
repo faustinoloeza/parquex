@@ -59,7 +59,17 @@ export default {
   time_auto: 'Automático',
   time_day: 'Día',
   time_night: 'Noche',
-  credits: 'Datos: Grupo Xcaret, OpenStreetMap, rivieramaya.mx',
+  theme: 'Tema',
+  theme_auto: 'Automático',
+  theme_classic: 'Clásico',
+  // festival of the Día de Muertos theme (ui/festival.js, ui/festival-markers.js)
+  festival_tab: 'Festival',
+  festival_today: 'Hoy',
+  festival_where: 'en Xcaret',
+  festival_sessions: 'funciones',
+  festival_park: 'Actividades del parque',
+  festival_source: 'Programa oficial del festival ↗',
+  credits: 'Datos: Grupo Xcaret, OpenStreetMap',
   // unofficial-site notice (ui/disclaimer.js)
   disclaimerEyebrow: 'Sitio no oficial',
   disclaimerTitle: 'Este mapa no es oficial',

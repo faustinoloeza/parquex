@@ -1,0 +1,23 @@
+/* ------------------------------------------------- theme: Día de Muertos
+   October and November (src/themes/muertos): marigold, Mexican pink and deep
+   purple, as on the festival's altars. The map itself (candle-lit night,
+   flowers, altars) is src/themes/muertos/decorations.js. */
+:root[data-theme='muertos'] {
+  --navy: #3b1550; /* deep purple: titles, the park-hours card, the loader */
+  --navy-2: #6d1b5e;
+  --sky: #ff8f00; /* marigold: focus rings and row highlights */
+  --teal: #d81b78; /* Mexican pink: markers, checks, pressed buttons */
+  --teal-container: #fbd3e6;
+  --sunset: #ff8f00; /* activities with extra cost */
+  --gold: #ffc93c;
+  --link: #b0125f;
+  --panel: #fffaf4f5; /* warm white */
+  --backdrop: #f1e2d3;
+}
+
+:root[data-theme='muertos'] .loader {
+  background: radial-gradient(circle at 50% 45%, #fff8ef 0%, var(--backdrop) 72%);
+}
+:root[data-theme='muertos'] .loader-ring {
+  border-top-color: var(--teal);
+}

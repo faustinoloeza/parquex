@@ -94,7 +94,7 @@
 }
 .sb-search:focus-within {
   border-color: var(--sky);
-  box-shadow: 0 0 0 3px #76d1ff44;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sky) 27%, transparent);
 }
 .sb-search input {
   flex: 1;
@@ -148,6 +148,12 @@
   color: #5d6d78;
   cursor: pointer;
 }
+/* four tabs (a seasonal festival's first): a little tighter */
+.sb-tabs:has(> :nth-child(4)) button {
+  gap: 4px;
+  padding-inline: 2px;
+  font-size: 13px;
+}
 .sb-tabs button[aria-selected='true'] {
   color: var(--navy);
   border-bottom-color: var(--navy);
@@ -187,7 +193,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: #0369a1;
+  color: var(--link);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -339,10 +345,10 @@
   height: 20px;
 }
 .poi-row:hover {
-  background: #76d1ff22;
+  background: color-mix(in srgb, var(--sky) 13%, transparent);
 }
 .poi-row.active {
-  background: #76d1ff44;
+  background: color-mix(in srgb, var(--sky) 27%, transparent);
 }
 .poi-row .num {
   flex: none;
@@ -427,13 +433,13 @@
   margin: 4px 0 6px;
   padding: 12px 14px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #102734, #1d4256);
+  background: linear-gradient(135deg, var(--navy), var(--navy-2));
   color: #fff;
 }
 .park-hours svg {
   width: 26px;
   height: 26px;
-  color: #ffd166;
+  color: var(--gold);
 }
 .park-hours div {
   flex: 1;
@@ -528,7 +534,7 @@
   opacity: 0.45;
 }
 .toggle input:focus-visible ~ .sw {
-  box-shadow: 0 0 0 3px #76d1ff88;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sky) 53%, transparent);
 }
 
 .sb-foot {

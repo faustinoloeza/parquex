@@ -18,6 +18,7 @@
     "data:build": "node pipeline/build.js",
     "data:overlay": "node pipeline/tools/debug-overlay.js",
     "data:compare": "node pipeline/tools/compare-landmarks.js",
+    "data:festival": "node pipeline/fetch-festival.js",
     "export:glb": "node pipeline/export-glb.js",
     "export:mobile": "node pipeline/export-glb.js --mobile --android",
     "publish:models": "node pipeline/publish-models.js",
