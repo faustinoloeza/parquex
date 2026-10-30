@@ -326,7 +326,10 @@ y fuerza emisiva nocturna por material); `context-lamps.bin` en los paquetes de 
   detalle de árboles y del suelo, tiles en memoria, densidad de árboles de los parques vecinos y cuadros por segundo (30 en
   «baja»; menos cuando nada se mueve).
 - **Menos trabajo por cuadro**: nivel de detalle de árboles por zona, materiales mate con sombreado Lambert,
-  geometría estática fusionada por material y figuras animadas en una malla por parte.
+  geometría estática fusionada por material y figuras animadas en una malla por parte. En teléfonos («media»)
+  los árboles pasan antes a su modelo simple y las sombras se recalculan con menos frecuencia al mover.
+- **Decoración de temas**: velas y flores por cuadros de 300 m (lo que no está en pantalla no se dibuja), ocultas
+  de lejos (frascos a 200 m, flores a 420 m: un píxel o menos; las llamas siguen) y con pocos triángulos.
 - Los shaders se compilan al cargar (en paralelo donde el navegador lo permite), sin congelar la página.
 
 ## Documentación

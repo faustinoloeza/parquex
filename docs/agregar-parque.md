@@ -61,7 +61,7 @@ Donde el pipeline se equivoque, corrige con `edits` (la lista completa está doc
 
 | Tipo              | Uso                                                                                                                                                                  |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `clearTrees`      | despejar árboles y edificios en un círculo                                                                                                                           |
+| `clearTrees`      | despejar árboles y edificios en un círculo (`radius`) o en polígonos (`polygons`)                                                                                    |
 | `ignoreRoofs`     | formas pintadas que no son techos (personajes, letreros)                                                                                                             |
 | `keepRoofs`       | techos pintados reales junto al agua o bajo árboles (palapas)                                                                                                        |
 | `satelliteCover`  | usar el satélite para decidir selva / pavimento en un círculo                                                                                                        |

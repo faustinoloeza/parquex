@@ -2,7 +2,8 @@
 // automatically from the illustration, OpenStreetMap and satellite imagery.
 // Applied in order (later edits win where they overlap).
 //
-//   clearTrees      { at, radius }       no generated trees / buildings here
+//   clearTrees      { at, radius | polygons }  no generated trees / buildings here
+//                                        (polygons relative to `at`)
 //   ignoreRoofs     { at, radius }       illustration shapes that are not roofs
 //   keepRoofs       { at, radius }       painted roofs kept although by the water
 //                                        or under trees (see pipeline/stages/buildings.js)
@@ -231,4 +232,23 @@ export default [
   // palm/sand shapes on the breakwater misread as roofs
   { kind: 'clearTrees', at: [174.8, 273.2], radius: 5 },
   { kind: 'clearTrees', at: [176.3, 288.3], radius: 5 },
+
+  // no trees past the car park, towards the highway: that jungle is outside the
+  // park (the west edge of the lot, then the access road to the north-west)
+  {
+    kind: 'clearTrees',
+    at: [0, 0], // absolute
+    polygons: [
+      [
+        [-410, 700],
+        [-410, -30],
+        [-425, -80],
+        [-465, -180],
+        [-500, -260],
+        [-520, -700],
+        [-1200, -700],
+        [-1200, 700],
+      ],
+    ],
+  },
 ];

@@ -120,6 +120,8 @@ export class Stage {
     this.lastCamera = new Float32Array(17);
     this.frameNo = 0;
     this.shadowAt = null;
+    /** frameNo of the last shadow map render */
+    this.shadowFrame = -Infinity;
   }
 
   /**
@@ -230,15 +232,19 @@ export class Stage {
    * The sun's shadow frustum follows what is on screen. Its size goes in steps
    * and it is only re-centered when the view has moved a fair part of it, so
    * while panning or zooming the shadow map is re-rendered every few frames
-   * instead of every frame (plus every 12 frames for animated parts).
+   * instead of every frame (plus every 12 frames for animated parts). `every`
+   * spaces those renders further on weak devices (QualityPreset.shadowEvery):
+   * at most one per `every` frames, the animated parts every 12 × `every`.
    */
-  updateShadows(target, distance) {
+  updateShadows(target, distance, every = 1) {
     if (this.sun.castShadow) {
       const needed = THREE.MathUtils.clamp(distance * 0.62, 60, 480);
       const half = 60 * 1.25 ** Math.ceil(Math.log(needed / 60) / Math.log(1.25));
       const cam = this.sun.shadow.camera;
-      const moved = !this.shadowAt || this.shadowAt.distanceTo(target) > half * 0.12 || cam.right !== half;
-      if (cam.right !== half) {
+      // the frustum only moves with a render of the map (else its shadows would slide)
+      const due = this.frameNo - this.shadowFrame >= every;
+      const moved = due && (!this.shadowAt || this.shadowAt.distanceTo(target) > half * 0.12 || cam.right !== half);
+      if (moved && cam.right !== half) {
         cam.left = -half;
         cam.right = half;
         cam.top = half;
@@ -252,7 +258,10 @@ export class Stage {
         this.sun.target.position.copy(target);
         this.sun.position.copy(target).addScaledVector(SUN, 700);
       }
-      if (moved || this.frameNo % 12 === 0) this.renderer.shadowMap.needsUpdate = true;
+      if (moved || (due && this.frameNo % (12 * every) === 0)) {
+        this.renderer.shadowMap.needsUpdate = true;
+        this.shadowFrame = this.frameNo;
+      }
     }
     this.frameNo++;
   }
