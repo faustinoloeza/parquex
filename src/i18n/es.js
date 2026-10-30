@@ -15,6 +15,10 @@ export default {
   parkSwitcher: 'Cambiar de parque',
   settings: 'Ajustes',
   language: 'Idioma',
+  // phone activity sheet and map filter chips (ui/activities-sheet.js, ui/poi-chips.js)
+  sheetResize: 'Cambiar el tamaño de la lista',
+  mapFilters: 'Filtros del mapa',
+  otherPois: 'Otros',
   // document title
   lbl_map_prefix_xc: 'XCARET MAPA',
   lbl_map_prefix_xh: 'XEL-HÁ MAPA',

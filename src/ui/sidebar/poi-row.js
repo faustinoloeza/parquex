@@ -1,5 +1,5 @@
 import { CATEGORY_STYLE, ICON } from '../icons.js';
-import { esc } from '../dom.js';
+import { esc, normalize } from '../dom.js';
 import { openState } from '../opening-hours.js';
 
 /**
@@ -22,4 +22,10 @@ export function poiRow(p, { t, L, categoryOf }) {
 /** Walking directions button next to an activity row. */
 export function goButton(p, { t, L }) {
   return `<button class="poi-go" data-go="${p.id}" title="${esc(`${t('nav_goTo')} ${L(p.name)}`)}" aria-label="${esc(`${t('nav_goTo')} ${L(p.name)}`)}">${ICON.directions}<span>${esc(t('nav_go'))}</span></button>`;
+}
+
+/** Search match (number, name in both languages, category, route, description), ignoring case and accents. */
+export function poiMatches(p, query) {
+  const q = normalize(query);
+  return normalize(`${p.number} ${p.name.es} ${p.name.en} ${p.category.es} ${p.route.es ?? ''} ${p.desc ?? ''}`).includes(q);
 }

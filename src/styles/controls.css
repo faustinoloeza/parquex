@@ -56,6 +56,16 @@
   transition: transform 0.1s linear;
 }
 
+/* phones: centered on the right edge, as in the Android app, clear of the
+   filter chips and the activity card at the bottom */
+@media (max-width: 640px) {
+  .map-tools {
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+  }
+}
+
 /* debug overlay (?stats) */
 .stats {
   position: absolute;

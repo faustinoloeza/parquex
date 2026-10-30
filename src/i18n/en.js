@@ -11,6 +11,10 @@ export default {
   parkSwitcher: 'Switch park',
   settings: 'Settings',
   language: 'Language',
+  // phone activity sheet and map filter chips (ui/activities-sheet.js, ui/poi-chips.js)
+  sheetResize: 'Resize the list',
+  mapFilters: 'Map filters',
+  otherPois: 'Others',
   lbl_map_prefix_xc: 'XCARET MAP',
   lbl_map_prefix_xh: 'XEL-HÁ MAP',
   lbl_map_prefix_xp: 'XPLOR MAP',

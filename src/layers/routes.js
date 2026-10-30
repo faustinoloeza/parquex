@@ -10,10 +10,10 @@ const MIN_PX = 4.5,
 
 /**
  * Official visitor routes (park.json → routes) as screen-space lines with an
- * outline: outline → stroke → flowing dashes (focused route). They render in
+ * outline: outline → stroke → flowing dashes (focused routes). They render in
  * their own pass (RENDER_LAYER.ROUTES, see Stage) so buildings hide them while
  * trees and the ground do not; the width follows the zoom (WORLD_WIDTH).
- * @returns {import('./index.js').Layer & { focus(slug: string | null): void, setDimmed(on: boolean): void, setVisible(slug: string, on: boolean): void, bounds(slug: string): THREE.Box3 | null }}
+ * @returns {import('./index.js').Layer & { focus(slugs: string | Iterable<string> | null): void, setDimmed(on: boolean): void, setVisible(slug: string, on: boolean): void, bounds(slug: string): THREE.Box3 | null }}
  */
 export function createRoutesLayer({ park, heightAt }) {
   const group = new THREE.Group();
@@ -66,14 +66,14 @@ export function createRoutesLayer({ park, heightAt }) {
     routes.set(r.slug, { def: r, index: ri, casing, stroke, flow, visible: true });
   });
 
-  let focused = null;
+  let focused = new Set();
   let dimAll = false; // a walking route is shown (app/navigation.js): every route steps back
   let base = 4.5; // px, updated with the zoom level
   function apply() {
     const n = routes.size;
     for (const [slug, r] of routes) {
-      const isFocus = focused === slug && !dimAll;
-      const dim = dimAll || (focused && !isFocus);
+      const isFocus = focused.has(slug) && !dimAll;
+      const dim = dimAll || (focused.size > 0 && !isFocus);
       const w = isFocus ? base * 1.45 : dim ? base * 0.7 : base;
       const outline = Math.min(5, Math.max(2.5, w * 0.4));
       r.stroke.material.linewidth = w;
@@ -83,7 +83,7 @@ export function createRoutesLayer({ park, heightAt }) {
       r.casing.material.opacity = dim ? 0.3 : 1;
       r.casing.visible = r.stroke.visible = r.visible;
       r.flow.visible = r.visible && isFocus;
-      // all outlines first, then all strokes; the focused route on top of everything
+      // all outlines first, then all strokes; the focused routes on top of everything
       const top = isFocus ? 3 * n : 0;
       r.casing.renderOrder = top + r.index;
       r.stroke.renderOrder = top + n + r.index;
@@ -95,8 +95,10 @@ export function createRoutesLayer({ park, heightAt }) {
   return {
     name: 'routes',
     object: group,
-    focus(slug) {
-      focused = slug && routes.has(slug) ? slug : null;
+    /** Highlights one route, several (a Set of slugs on phones, ui/poi-chips.js) or none (null). */
+    focus(slugs) {
+      const list = slugs == null ? [] : typeof slugs === 'string' ? [slugs] : [...slugs];
+      focused = new Set(list.filter((s) => routes.has(s)));
       apply();
     },
     /** Dims every route (under a walking route); false restores the focus state. */
@@ -126,9 +128,10 @@ export function createRoutesLayer({ park, heightAt }) {
           apply();
         }
       }
-      if (!focused) return;
-      const r = routes.get(focused);
-      if (r?.flow.visible) r.flow.material.dashOffset = -t * 10;
+      for (const slug of focused) {
+        const r = routes.get(slug);
+        if (r.flow.visible) r.flow.material.dashOffset = -t * 10;
+      }
     },
   };
 }
