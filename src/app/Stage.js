@@ -100,6 +100,8 @@ export class Stage {
     sun.shadow.radius = 2.5; // softer edges (same PCF taps, no extra cost)
     scene.add(sun, sun.target);
     this.sun = sun;
+    /** night lights in use: LIGHTING.night, or a seasonal theme's (setNightStyle) */
+    this.nightLight = LIGHTING.night;
     this.night = -1;
     this.setNight(0);
 
@@ -126,7 +128,8 @@ export class Stage {
   setNight(k) {
     if (k === this.night) return;
     this.night = k;
-    const { day, night } = LIGHTING;
+    const { day } = LIGHTING,
+      night = this.nightLight;
     const mix = (a, b) => tmpA.set(a).lerp(tmpB.set(b), k);
     this.scene.background.copy(mix(day.sky, night.sky));
     this.scene.fog.color.copy(this.scene.background);
@@ -137,6 +140,18 @@ export class Stage {
     this.sun.intensity = THREE.MathUtils.lerp(day.sunIntensity, night.sunIntensity, k);
     this.sun.shadow.intensity = THREE.MathUtils.lerp(day.shadow, night.shadow, k);
     this.renderer.toneMappingExposure = THREE.MathUtils.lerp(day.exposure, night.exposure, k);
+  }
+
+  /**
+   * Night lights of a seasonal theme (src/themes) over LIGHTING.night, or null
+   * for the usual ones; applied at once.
+   * @param {Partial<typeof LIGHTING.night> | null} style
+   */
+  setNightStyle(style) {
+    this.nightLight = { ...LIGHTING.night, ...style };
+    const k = this.night;
+    this.night = -1;
+    this.setNight(k);
   }
 
   /** Adds a layer's object; solid layers also go on the occluder layer. */

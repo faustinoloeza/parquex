@@ -1,15 +1,20 @@
 // Entry point: reads the URL, loads the park's 3D map and wires the UI to it.
 import './styles/index.css';
 import { MapApp } from './app/MapApp.js';
-import { parseRoute, routeUrl, debugFlags } from './app/routing.js';
+import { BASE, parseRoute, routeUrl, debugFlags } from './app/routing.js';
 import { readPreference, writePreference } from './app/preferences.js';
 import { TIME_MODES, forcedTimeMode } from './app/time-of-day.js';
+import { THEME_MODES, activeTheme, forcedThemeMode } from './themes/index.js';
+import { applyTheme } from './ui/theme.js';
 import { PARKS } from './parks/index.js';
 import { translator } from './i18n/index.js';
 import { createHeader } from './ui/header.js';
 import { createSidebar } from './ui/sidebar/index.js';
 import { createActivitiesSheet } from './ui/activities-sheet.js';
 import { createPoiChips } from './ui/poi-chips.js';
+import { createFestivalPanel } from './ui/festival.js';
+import { createFestivalMarkers } from './ui/festival-markers.js';
+import { parkDate, sessionsOn } from './themes/muertos/festival.js';
 import { createToolbar } from './ui/toolbar.js';
 import { createAttribution } from './ui/attribution.js';
 import { createLoadingScreen } from './ui/loading-screen.js';
@@ -33,8 +38,15 @@ async function boot() {
   stage.className = 'gx-map-container';
   root.appendChild(stage);
 
+  // seasonal theme, only in its season: the saved choice ('auto' goes by the
+  // date), or forced from the URL (?theme=…: screenshots, not saved)
+  const savedTheme = readPreference('theme', 'auto');
+  let themeMode = forcedThemeMode() ?? (THEME_MODES.includes(savedTheme) ? savedTheme : 'auto');
+  let theme = activeTheme(themeMode);
+  applyTheme(theme);
+
   let t = translator(lang);
-  const loading = createLoadingScreen(root, t);
+  const loading = createLoadingScreen(root, t, theme?.tagline?.[lang]);
   const disclaimer = createDisclaimer(root, () => t);
   const navigate = (park, language) => {
     location.href = routeUrl(park, language);
@@ -52,9 +64,13 @@ async function boot() {
     t,
     quality,
     timeMode,
+    theme,
     debug,
     onProgress: (p) => loading.progress(p),
-    onSelect: (poi) => sidebar?.highlight(poi),
+    onSelect: (poi) => {
+      sidebar?.highlight(poi);
+      festivalMarkers?.deselect();
+    },
   });
   try {
     await app.load();
@@ -71,6 +87,34 @@ async function boot() {
   let topbar = null;
   let activities = null;
   let chips = null;
+  // a seasonal festival in the focused park (src/themes): its program and places, its markers
+  let festival = null;
+  let festivalMarkers = null;
+  let festivalShown = true;
+  const switchTheme = (next) => {
+    theme = next;
+    applyTheme(theme);
+    app.setTheme(theme);
+    loadFestival().then(() => buildChrome(app.parkDef));
+  };
+  // a season that ends (or starts) with the page open: the theme follows within a minute
+  setInterval(() => {
+    const next = activeTheme(themeMode);
+    if (next !== theme) switchTheme(next);
+  }, 60_000);
+  const loadFestival = async () => {
+    const f = theme?.festival;
+    festival = null;
+    if (!f || app.parkDef.key !== f.park) return;
+    try {
+      const res = await fetch(`${BASE}parks/${f.park}/${f.file}`);
+      const program = res.ok ? await res.json() : null;
+      // an old year's program never shows: only until its last day
+      if (program && program.days.at(-1) >= parkDate()) festival = { info: f, program, places: f.places[f.park] ?? {} };
+    } catch {
+      // offline: the theme shows without its program
+    }
+  };
   const phone = matchMedia(MOBILE);
   let sidebarOpen = !debug.nosidebar;
 
@@ -138,13 +182,52 @@ async function boot() {
         writePreference('timeOfDay', mode);
         app.setTimeMode(mode);
       },
+      themeMode,
+      onTheme: (mode) => {
+        themeMode = mode;
+        writePreference('theme', mode);
+        switchTheme(activeTheme(mode));
+      },
     });
     document.title = `${t(current.labelKey)} 3D`;
     sidebar?.el.remove();
     activities?.remove();
     chips?.remove();
     sidebar = activities = chips = null;
+    festivalMarkers?.dispose();
+    festivalMarkers = null;
     app.focusRoute(null);
+    let festivalPanel = null;
+    if (festival) {
+      const { program, places, info } = festival;
+      festivalMarkers = createFestivalMarkers(app.stage.scene, {
+        program,
+        places,
+        lang,
+        t,
+        heightAt: app.world.heightAt,
+        onChange: () => (app.labelsDirty = true),
+      });
+      festivalPanel = createFestivalPanel({
+        program,
+        places,
+        name: info.name,
+        lang,
+        t,
+        // a session: its place's card on the map
+        onPlace: (place, at, day) => {
+          app.select(null);
+          festivalMarkers.setDay(day);
+          festivalMarkers.focus(place);
+          festivalShown = true;
+          chips?.setFestival(true);
+          app.focusPoint(at.x, at.z);
+        },
+        onDay: (day) => festivalMarkers.setDay(day),
+      });
+      festivalMarkers.setDay(festivalPanel.day);
+      festivalMarkers.show(festivalShown);
+    }
     const common = {
       park: app.park,
       lang,
@@ -154,7 +237,7 @@ async function boot() {
       onAbout: () => disclaimer.open({ force: true }),
     };
     if (phone.matches) {
-      activities = createActivitiesSheet(root, { ...common, onToggle: (open) => topbar.setListOpen(open) });
+      activities = createActivitiesSheet(root, { ...common, festival: festivalPanel, onToggle: (open) => topbar.setListOpen(open) });
       chips = createPoiChips(root, {
         park: app.park,
         lang,
@@ -162,10 +245,20 @@ async function boot() {
         onFilter: (filter) => app.applyFilter(filter),
         onRoutes: (slugs) => app.focusRoutes(slugs),
         onFrame: (bounds) => app.frameArea(bounds),
+        festival: festivalPanel && {
+          count: sessionsOn(festival.program, festivalPanel.day).length,
+          on: festivalShown,
+          bounds: festivalMarkers.bounds(),
+          onToggle: (on) => {
+            festivalShown = on;
+            festivalMarkers.show(on);
+          },
+        },
       });
     } else {
       sidebar = createSidebar(root, {
         ...common,
+        festival: festivalPanel,
         onFilter: (filter) => app.applyFilter(filter),
         onFocusRoute: (slug) => app.focusRoute(slug),
       });
@@ -189,7 +282,7 @@ async function boot() {
     if (!fromHistory) history.pushState(null, '', routeUrl(def.key, lang) + location.search);
     // a walk belongs to one park: switching parks cancels it
     navigation.reset();
-    buildChrome(def);
+    loadFestival().then(() => buildChrome(def));
   };
   window.addEventListener('popstate', async () => {
     const route = parseRoute();
@@ -198,6 +291,7 @@ async function boot() {
     await navigateOrFocus(route.park, route.lang);
     fromHistory = false;
   });
+  await loadFestival();
   buildChrome(parkDef);
   phone.addEventListener('change', () => buildChrome(app.parkDef));
 

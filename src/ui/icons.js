@@ -39,6 +39,10 @@ export const ICON = {
   directions: svg(
     '<path d="M12 2.5l9.5 9.5-9.5 9.5L2.5 12z"/><path d="M9 14.5v-3a1.5 1.5 0 0 1 1.5-1.5H15"/><path d="M13 7.8l2.2 2.2-2.2 2.2"/>',
   ),
+  // calavera (Día de Muertos theme): skull with filled eyes and nose
+  skull: svg(
+    '<path d="M12 3C7.6 3 4 6.1 4 10.2c0 2.3 1.1 4.1 2.8 5.2V18a1 1 0 0 0 1 1H9v2h2v-2h2v2h2v-2h1.2a1 1 0 0 0 1-1v-2.6c1.7-1.1 2.8-2.9 2.8-5.2C20 6.1 16.4 3 12 3z"/><circle cx="9" cy="11" r="1.9" fill="currentColor"/><circle cx="15" cy="11" r="1.9" fill="currentColor"/><path d="M12 13.6l-1 1.8h2z" fill="currentColor"/>',
+  ),
   walk: svg('<circle cx="13" cy="4" r="1.8"/><path d="M10.5 21l2-6-2.5-2.5 1-4.5 3 3 2.5 1M10.5 8.5L7.5 10l-1 3.5M12.5 15l2.5 6"/>'),
 };
 

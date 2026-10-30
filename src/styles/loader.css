@@ -8,7 +8,7 @@
   align-items: center;
   justify-content: center;
   gap: 14px;
-  background: radial-gradient(circle at 50% 45%, #ffffff 0%, #dde8ee 70%);
+  background: radial-gradient(circle at 50% 45%, #ffffff 0%, var(--backdrop) 70%);
   color: var(--navy);
   font-weight: 600;
   transition: opacity 0.5s;
@@ -21,6 +21,14 @@
 .loader p {
   margin: 0;
 }
+.loader .loader-tagline {
+  margin-top: -8px; /* closer to the message than the gap */
+  color: var(--teal);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
 .loader-error {
   color: #b3261e;
 }
@@ -28,7 +36,7 @@
 .loader-ring {
   width: 54px;
   height: 54px;
-  border: 5px solid #76d1ff55;
+  border: 5px solid color-mix(in srgb, var(--sky) 33%, transparent);
   border-top-color: var(--navy);
   border-radius: 50%;
   animation: spin 0.9s linear infinite;

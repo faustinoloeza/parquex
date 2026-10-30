@@ -26,8 +26,9 @@ import { renderHoursPane } from './hours-pane.js';
  * @param {(filter: object) => void} options.onFilter
  * @param {(slug: string | null) => void} options.onFocusRoute
  * @param {(poi: object) => void} [options.onDirections]  walking directions to an activity ("Go" buttons)
+ * @param {{ el: HTMLElement }} [options.festival]  program of a seasonal festival (ui/festival.js): a first tab, open
  */
-export function createSidebar(root, { park, lang, t, onSelect, onFilter, onFocusRoute, onDirections, onAbout }) {
+export function createSidebar(root, { park, lang, t, onSelect, onFilter, onFocusRoute, onDirections, onAbout, festival }) {
   const L = (value) => localized(value, lang);
   const pois = park.pois.filter((p) => p.active);
   const categoryOf = (p) => p.category.es ?? 'Otros';
@@ -51,13 +52,15 @@ export function createSidebar(root, { park, lang, t, onSelect, onFilter, onFocus
     <div class="sb-head">${parkHeader(park, t)}
     </div>
     <nav class="sb-tabs" role="tablist">
-      <button role="tab" data-tab="routes" aria-selected="true">${ICON.route}${t('tabRoutes')}</button>
+      ${festival ? `<button role="tab" data-tab="festival" aria-selected="true">${ICON.skull}${t('festival_tab')}</button>` : ''}
+      <button role="tab" data-tab="routes" aria-selected="${!festival}">${ICON.route}${t('tabRoutes')}</button>
       <button role="tab" data-tab="places" aria-selected="false">${ICON.layers}${t('tabPlaces')}</button>
       <button role="tab" data-tab="hours" aria-selected="false">${ICON.clock}${t('tabHours')}</button>
     </nav>
     <div class="sb-body">
       <section class="sb-pane" data-pane="results" hidden></section>
-      <section class="sb-pane" data-pane="routes"></section>
+      ${festival ? '<section class="sb-pane" data-pane="festival"></section>' : ''}
+      <section class="sb-pane" data-pane="routes"${festival ? ' hidden' : ''}></section>
       <section class="sb-pane" data-pane="places" hidden></section>
       <section class="sb-pane" data-pane="hours" hidden></section>
     </div>
@@ -67,6 +70,7 @@ export function createSidebar(root, { park, lang, t, onSelect, onFilter, onFocus
     </footer>`;
   root.appendChild(el);
   const pane = (name) => el.querySelector(`[data-pane="${name}"]`);
+  if (festival) pane('festival').appendChild(festival.el);
   el.querySelector('[data-about]')?.addEventListener('click', () => onAbout());
 
   // -------------------------------------------------------------- filtering
@@ -107,7 +111,7 @@ export function createSidebar(root, { park, lang, t, onSelect, onFilter, onFocus
   // ------------------------------------------------------------------- tabs
   const panes = [...el.querySelectorAll('.sb-pane')];
   const tabs = [...el.querySelectorAll('[data-tab]')];
-  let activeTab = 'routes';
+  let activeTab = festival ? 'festival' : 'routes';
   const showPane = (name) => {
     for (const p of panes) p.hidden = p.dataset.pane !== name;
   };

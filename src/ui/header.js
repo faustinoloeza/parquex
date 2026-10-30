@@ -3,6 +3,7 @@ import { LANGS } from '../i18n/index.js';
 import { esc } from './dom.js';
 import { attachMenu } from './menu.js';
 import { TIME_MODES } from '../app/time-of-day.js';
+import { THEMES, activeTheme, themeModes } from '../themes/index.js';
 
 /** Language names in their own language (not translated). */
 const LANG_NAMES = { es: 'Español', en: 'English' };
@@ -19,7 +20,8 @@ const ICONS = {
 /**
  * Compact floating top bar, as in the Android app: a pill with the park name and
  * opening hours (opens the park switcher) and a settings button (language, graphics
- * quality, day / night). `onMenu` adds a button that shows/hides the activity list.
+ * quality, day / night, and the seasonal theme while one is in season). `onMenu` adds a button that
+ * shows/hides the activity list.
  *
  * @param {HTMLElement} root
  * @param {object} options
@@ -33,8 +35,13 @@ const ICONS = {
  * @param {(mode: string) => void} [options.onQuality]
  * @param {string} [options.timeMode]    current time of day mode ('auto' | 'day' | 'night')
  * @param {(mode: string) => void} [options.onTimeMode]
+ * @param {string} [options.themeMode]   current theme mode ('auto' | a theme key | 'classic', src/themes)
+ * @param {(mode: string) => void} [options.onTheme]
  */
-export function createHeader(root, { park, lang, t, hours, quality, onNavigate, onMenu, onQuality, timeMode, onTimeMode }) {
+export function createHeader(
+  root,
+  { park, lang, t, hours, quality, onNavigate, onMenu, onQuality, timeMode, onTimeMode, themeMode, onTheme },
+) {
   const title = PARKS[park]?.name ?? park;
   const hoursText = hours ? `${hours.open} – ${hours.close}` : '';
   const el = document.createElement('header');
@@ -68,7 +75,16 @@ export function createHeader(root, { park, lang, t, hours, quality, onNavigate, 
   );
 
   let current = quality,
-    currentTime = timeMode;
+    currentTime = timeMode,
+    currentTheme = themeMode;
+  // 'auto' names the theme it shows now, e.g. "Automático (Día de Muertos)"
+  const themeLabel = (mode) => {
+    if (mode === 'auto') {
+      const now = activeTheme('auto');
+      return now ? `${t('theme_auto')} (${now.label[lang] ?? now.label.es})` : t('theme_auto');
+    }
+    return THEMES[mode] ? (THEMES[mode].label[lang] ?? THEMES[mode].label.es) : t('theme_classic');
+  };
   attachMenu(
     el.querySelector('.tb-settings button'),
     () => [
@@ -100,6 +116,19 @@ export function createHeader(root, { park, lang, t, hours, quality, onNavigate, 
               onSelect: () => {
                 currentTime = m;
                 onTimeMode(m);
+              },
+            })),
+          ]
+        : []),
+      ...(onTheme && themeModes().length
+        ? [
+            { title: t('theme') },
+            ...themeModes().map((m) => ({
+              label: themeLabel(m),
+              checked: m === currentTheme,
+              onSelect: () => {
+                currentTheme = m;
+                onTheme(m);
               },
             })),
           ]

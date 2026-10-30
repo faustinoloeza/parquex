@@ -52,6 +52,7 @@ docs/                documentación
 | `pnpm data:build [park]`         | genera `public/parks/<park>/` (≈ 12 s, resultado determinista)            |
 | `pnpm data:overlay [park]`       | dibuja los datos generados sobre la ilustración (o el satélite)           |
 | `pnpm data:compare [park] [ids]` | recortes ilustración / satélite alrededor de modelos o puntos             |
+| `pnpm data:festival`             | programa del Festival de Vida y Muerte para el tema Día de Muertos        |
 | `pnpm export:glb [park]`         | exporta el mundo estático a `dist-mobile/<park>/park.glb` (app móvil)     |
 | `pnpm export:mobile [park]`      | solo modelos + sombras (`park-models.glb`) y copia a la app Android       |
 | `pnpm publish:models`            | publica la exportación móvil como Release de GitHub (la app se actualiza) |
@@ -302,6 +303,7 @@ y fuerza emisiva nocturna por material); `context-lamps.bin` en los paquetes de 
 ## Documentación
 
 - [Arquitectura](docs/arquitectura.md): cómo se generan los datos y cómo se dibuja el mapa.
+- [Temas de temporada](docs/temas.md): Día de Muertos y cómo agregar otros temas.
 - [Agregar un modelo 3D](docs/agregar-modelo.md): crear un edificio nuevo y colocarlo en un parque.
 - [Agregar un parque](docs/agregar-parque.md): de las fuentes oficiales a un mapa funcionando.
 

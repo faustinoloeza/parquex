@@ -19,8 +19,10 @@ import { parkHeader } from './sidebar/park-header.js';
  * @param {(poi: object) => void} options.onDirections
  * @param {() => void} [options.onAbout]    shows the unofficial-site notice again
  * @param {(open: boolean) => void} [options.onToggle]
+ * @param {{ el: HTMLElement, setQuery: (q: string) => void }} [options.festival]  program of a seasonal festival
+ *        (ui/festival.js), above the park's activities; the search filters it too
  */
-export function createActivitiesSheet(root, { park, lang, t, onSelect, onDirections, onAbout, onToggle }) {
+export function createActivitiesSheet(root, { park, lang, t, onSelect, onDirections, onAbout, onToggle, festival }) {
   const L = (value) => localized(value, lang);
   const pois = park.pois.filter((p) => p.active).sort((a, b) => a.number - b.number);
   const ctx = { t, L, categoryOf: (p) => p.category.es ?? 'Otros' };
@@ -29,6 +31,7 @@ export function createActivitiesSheet(root, { park, lang, t, onSelect, onDirecti
   sheet.el.classList.add('activities-sheet');
   sheet.head.innerHTML = parkHeader(park, t);
   sheet.body.innerHTML = `
+    ${festival ? `<h3 class="sheet-section">${t('festival_park')}</h3>` : ''}
     <ul class="hours-list"></ul>
     <p class="sb-empty" hidden>${t('noResults')}</p>
     <footer class="sb-foot">
@@ -36,6 +39,11 @@ export function createActivitiesSheet(root, { park, lang, t, onSelect, onDirecti
       <small>${t('credits')}</small>
     </footer>`;
   const list = sheet.body.querySelector('.hours-list');
+  if (festival) {
+    sheet.body.prepend(festival.el);
+    // a session flies to its place (main.js): the sheet gets out of the way
+    festival.el.addEventListener('click', (e) => e.target.closest('.fest-row') && sheet.close());
+  }
   const empty = sheet.body.querySelector('.sb-empty');
 
   const render = (query) => {
@@ -52,6 +60,7 @@ export function createActivitiesSheet(root, { park, lang, t, onSelect, onDirecti
     const query = input.value.trim();
     clear.hidden = !query;
     render(query);
+    festival?.setQuery(query);
     sheet.body.scrollTop = 0;
   });
   // typing needs the whole height (the keyboard covers the bottom)

@@ -36,19 +36,24 @@ export class MapApp {
    * @param {(key: string) => string} options.t            translator
    * @param {'auto' | 'high' | 'medium' | 'low'} [options.quality]
    * @param {'auto' | 'day' | 'night'} [options.timeMode]  time of day ('auto': night 19:00–06:00 park time)
+   * @param {import('../themes/index.js').Theme | null} [options.theme]  seasonal theme (src/themes)
    * @param {{ reference?: boolean, still?: boolean, view?: number[] | null, neighbors?: boolean }} [options.debug]
    * @param {(fraction: number) => void} [options.onProgress]
    * @param {(poi: object | null) => void} [options.onSelect]
    */
-  constructor(container, { park, lang, t, quality = 'auto', timeMode = 'auto', debug = {}, onProgress = () => {}, onSelect = () => {} }) {
+  constructor(
+    container,
+    { park, lang, t, quality = 'auto', timeMode = 'auto', theme = null, debug = {}, onProgress = () => {}, onSelect = () => {} },
+  ) {
     this.container = container;
     this.parkDef = park;
     this.lang = lang;
     this.t = t;
     this.initialQuality = quality;
     this.timeMode = timeMode;
+    this.theme = theme;
     /** night level: 1 = night; the current one moves towards the target in NIGHT_TRANSITION s */
-    this.nightTarget = nightFor(timeMode) ? 1 : 0;
+    this.nightTarget = this.wantsNight() ? 1 : 0;
     this.nightProgress = this.nightTarget;
     this.debug = debug;
     this.onProgress = onProgress;
@@ -110,6 +115,7 @@ export class MapApp {
     let autoLevel = detectQuality();
     const level = this.initialQuality === 'auto' ? autoLevel : this.initialQuality;
     this.stage = new Stage(this.container, { antialias: level !== 'low' });
+    this.stage.setNightStyle(this.theme?.night ?? null);
     this.applyNight(this.nightProgress);
     // 'auto' follows the park's clock
     setInterval(() => this.updateNightTarget(), 60_000);
@@ -117,6 +123,7 @@ export class MapApp {
     this.world = await createWorld(this.stage, this.parkDef, assets, {
       neighbors: this.debug.neighbors !== false,
       load: { parkJson: (key) => this.parkJson(key), assets: (key) => this.liteAssets(key) },
+      theme: this.theme,
     });
     const { heightAt, routes } = this.world;
     this.routeSlugOf = makeRouteLookup(this.park.routes);
@@ -211,7 +218,7 @@ export class MapApp {
     try {
       const [cached, park] = await Promise.all([this.liteAssets(key), this.parkJson(key)]);
       const assets = await loadParkAssets(key, { cached: { ...cached, park } });
-      built = await createParkLayers(this.stage, parkDef, assets, { detached: true });
+      built = await createParkLayers(this.stage, parkDef, assets, { detached: true, theme: this.theme });
       const commitNeighbors = await neighbors.prepareFocus({ park, designArea: built.designArea });
       if (!commitNeighbors) throw new Error('superseded');
       // compile the new park's shaders before it shows (it is not in the scene yet)
@@ -271,6 +278,7 @@ export class MapApp {
       surfaceAt: built.surfaceAt,
       routes: built.routes,
       designArea: built.designArea,
+      decorate: built.decorate,
       layers: worldLayers(built.layers, basemap, neighbors),
     };
     this.quality.layers = this.world.layers;
@@ -341,6 +349,11 @@ export class MapApp {
     this.routes.focus(slugs.size ? slugs : this.selected ? this.routeSlugOf(this.selected) : null);
   }
 
+  /** Flies the camera to a ground point (meters), as when an activity is selected. */
+  focusPoint(x, z) {
+    this.rig.focusPoint(x, z);
+  }
+
   /** Frames a ground rectangle ({ x0, x1, z0, z1 }, meters). */
   frameArea({ x0, x1, z0, z1 }) {
     this.rig.frameBox(new THREE.Box3(new THREE.Vector3(x0, 0, z0), new THREE.Vector3(x1, 0, z1)));
@@ -372,8 +385,42 @@ export class MapApp {
     return this.nightTarget === 1;
   }
 
+  /** Night for the time mode; on 'auto', a theme that lives at night (alwaysNight) keeps it night. */
+  wantsNight() {
+    return nightFor(this.timeMode) || (this.timeMode === 'auto' && !!this.theme?.alwaysNight);
+  }
+
+  /**
+   * Switches the seasonal theme (null: none) in place: its night lights and the
+   * decoration layer of the focused park (parks focused later get it too).
+   * @param {import('../themes/index.js').Theme | null} theme
+   */
+  async setTheme(theme) {
+    this.theme = theme;
+    this.stage.setNightStyle(theme?.night ?? null);
+    this.updateNightTarget();
+    const { parkLayers, basemap, neighbors } = this.world;
+    const old = parkLayers.findIndex((l) => l.theme);
+    if (old >= 0) {
+      const [layer] = parkLayers.splice(old, 1);
+      this.stage.scene.remove(layer.object);
+      layer.dispose?.();
+      disposeObject(layer.object);
+    }
+    const layer = await this.world.decorate(theme);
+    if (layer) {
+      layer.setQuality?.(this.quality.preset);
+      this.stage.addLayer(layer);
+      parkLayers.push(layer);
+      await this.compileShaders();
+    }
+    this.world.layers = worldLayers(parkLayers, basemap, neighbors);
+    this.quality.layers = this.world.layers;
+    this.lastMove = performance.now();
+  }
+
   updateNightTarget() {
-    const target = nightFor(this.timeMode) ? 1 : 0;
+    const target = this.wantsNight() ? 1 : 0;
     if (target === this.nightTarget) return;
     this.nightTarget = target;
     this.lastMove = performance.now(); // full frame rate for the transition

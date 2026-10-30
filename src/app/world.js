@@ -38,11 +38,13 @@ const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => res
  * @param {import('./Stage.js').Stage} stage
  * @param {import('../parks/define.js').ParkDefinition} parkDef
  * @param {Awaited<ReturnType<typeof import('./assets.js').loadParkAssets>>} assets
- * @param {{ detached?: boolean, onTerrain?: (layer: object) => Promise<void> | void }} [options]
+ * @param {{ detached?: boolean, onTerrain?: (layer: object) => Promise<void> | void,
+ *   theme?: import('../themes/index.js').Theme | null }} [options]
  *        detached: not added to the stage (in-app focus switch: the caller adds them all at once);
- *        onTerrain: called right after the terrain (the real map goes there in the scene order)
+ *        onTerrain: called right after the terrain (the real map goes there in the scene order);
+ *        theme: seasonal theme whose decoration layer goes on top (src/themes)
  */
-export async function createParkLayers(stage, parkDef, assets, { detached = false, onTerrain } = {}) {
+export async function createParkLayers(stage, parkDef, assets, { detached = false, onTerrain, theme = null } = {}) {
   const { park } = assets;
   const designArea = makeDesignArea(park.clear);
   const holes = makeGroundHoles(landmarkGroundHoles(parkDef.landmarks));
@@ -80,7 +82,7 @@ export async function createParkLayers(stage, parkDef, assets, { detached = fals
   await add(createLandmarksLayer({ landmarks: parkDef.landmarks, park, heightAt }));
   await add(createVehiclesLayer({ rows: parkDef.vehicles, heightAt }));
   await add(createWalkwaysLayer({ park, heightAt: surfaceAt }));
-  await add(
+  const lamps = await add(
     createLampsLayer({
       park,
       heightAt,
@@ -93,7 +95,23 @@ export async function createParkLayers(stage, parkDef, assets, { detached = fals
   );
   const routes = await add(createRoutesLayer({ park, heightAt }));
   await add(createFaunaLayer({ fauna: parkDef.fauna }));
-  return { layers, heightAt, surfaceAt, routes, designArea };
+  // a seasonal theme's decoration (src/themes); MapApp.setTheme() builds it again on a theme change
+  const decorate = async (t) =>
+    t?.decorations
+      ? t.decorations({
+          park,
+          parkDef,
+          heightAt,
+          surfaceAt,
+          buildings: assets.buildings,
+          vegetation: assets.vegetationBuffer,
+          designArea,
+          lamps,
+        })
+      : null;
+  const decoration = await decorate(theme);
+  if (decoration) await add(decoration);
+  return { layers, heightAt, surfaceAt, routes, designArea, decorate };
 }
 
 /**
@@ -103,18 +121,20 @@ export async function createParkLayers(stage, parkDef, assets, { detached = fals
  * @param {import('./Stage.js').Stage} stage
  * @param {import('../parks/define.js').ParkDefinition} parkDef
  * @param {Awaited<ReturnType<typeof import('./assets.js').loadParkAssets>>} assets
- * @param {{ neighbors?: boolean, load?: object }} [options] neighbors: false leaves neighboring parks out
- *        (?noneighbors); load: how the neighbors layer gets park.json and lightweight assets (MapApp's cache)
+ * @param {{ neighbors?: boolean, load?: object, theme?: import('../themes/index.js').Theme | null }} [options]
+ *        neighbors: false leaves neighboring parks out (?noneighbors); load: how the neighbors layer gets
+ *        park.json and lightweight assets (MapApp's cache); theme: seasonal theme (src/themes)
  */
 export async function createWorld(
   stage,
   parkDef,
   assets,
-  { neighbors: withNeighbors = true, load = { parkJson: loadParkJson, assets: loadNeighborAssets } } = {},
+  { neighbors: withNeighbors = true, load = { parkJson: loadParkJson, assets: loadNeighborAssets }, theme = null } = {},
 ) {
   const { park } = assets;
   let basemap = null;
   const own = await createParkLayers(stage, parkDef, assets, {
+    theme,
     onTerrain: async () => {
       basemap = createBasemapLayer({ park, designArea: makeDesignArea(park.clear), config: BASEMAP });
       stage.addLayer(basemap);

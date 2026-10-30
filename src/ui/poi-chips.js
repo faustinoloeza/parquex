@@ -1,4 +1,4 @@
-import { CATEGORY_STYLE, SERVICE_TYPES } from './icons.js';
+import { CATEGORY_STYLE, ICON, SERVICE_TYPES } from './icons.js';
 import { esc } from './dom.js';
 import { localized } from '../i18n/index.js';
 
@@ -91,8 +91,10 @@ function luminance(hex) {
  * @param {(filter: { visible: (poi: object) => boolean, services: Set<string> }) => void} options.onFilter
  * @param {(slugs: Set<string>) => void} options.onRoutes   routes of the active chips (highlighted)
  * @param {(bounds: { x0: number, x1: number, z0: number, z1: number }) => void} options.onFrame
+ * @param {{ count: number, on: boolean, onToggle: (on: boolean) => void, bounds: object | null }} [options.festival]
+ *        a seasonal festival's places (ui/festival-markers.js): the first chip
  */
-export function createPoiChips(root, { park, lang, t, onFilter, onRoutes, onFrame }) {
+export function createPoiChips(root, { park, lang, t, onFilter, onRoutes, onFrame, festival }) {
   const L = (value) => localized(value, lang);
   const { groups, groupOf } = groupsOf(park, L);
   const serviceTypes = new Set((park.services ?? []).map((s) => s.type));
@@ -111,11 +113,20 @@ export function createPoiChips(root, { park, lang, t, onFilter, onRoutes, onFram
         bounds: boundsOf(points),
       };
     });
-  const chips = [...groups, ...services];
-  const active = new Set();
+  const festivalChip = festival && {
+    key: 'festival',
+    kind: 'festival',
+    label: t('festival_tab'),
+    color: '#d81b78',
+    casing: '#d81b78',
+    icon: ICON.skull,
+    count: festival.count,
+    bounds: festival.bounds,
+  };
+  const chips = [...(festivalChip ? [festivalChip] : []), ...groups, ...services];
+  const active = new Set(festival?.on ? ['festival'] : []);
 
-  const swatch = (c) =>
-    c.kind === 'route' ? '<span class="chip-line"></span>' : c.kind === 'service' ? c.icon : '<span class="chip-dot"></span>';
+  const swatch = (c) => (c.kind === 'route' ? '<span class="chip-line"></span>' : c.icon ? c.icon : '<span class="chip-dot"></span>');
   const el = document.createElement('nav');
   el.className = 'poi-chips';
   el.setAttribute('aria-label', t('mapFilters'));
@@ -123,7 +134,7 @@ export function createPoiChips(root, { park, lang, t, onFilter, onRoutes, onFram
     .map((c) => {
       // a white line is drawn by its outline, so that is its accent
       const accent = luminance(c.color) > 0.8 ? c.casing : c.color;
-      return `<button type="button" class="chip" data-key="${esc(c.key)}" aria-pressed="false" style="--c:${accent};--line:${c.color};--k:${c.casing}">
+      return `<button type="button" class="chip" data-key="${esc(c.key)}" aria-pressed="${active.has(c.key)}" style="--c:${accent};--line:${c.color};--k:${c.casing}">
         ${swatch(c)}<span>${esc(c.label ?? t('otherPois'))}</span><span class="chip-count">${c.count}</span></button>`;
     })
     .join('');
@@ -145,12 +156,23 @@ export function createPoiChips(root, { park, lang, t, onFilter, onRoutes, onFram
     if (on) active.add(chip.key);
     else active.delete(chip.key);
     button.setAttribute('aria-pressed', String(on));
-    emit();
+    if (chip.kind === 'festival') festival.onToggle(on);
+    else emit();
     if (on && chip.bounds) onFrame(chip.bounds);
   });
 
   // start with no activity markers on the map, as on desktop
   emit();
 
-  return { el, remove: () => el.remove() };
+  return {
+    el,
+    /** Reflects the festival markers being shown elsewhere (a session picked in the list). */
+    setFestival(on) {
+      if (!festival) return;
+      if (on) active.add('festival');
+      else active.delete('festival');
+      el.querySelector('[data-key="festival"]').setAttribute('aria-pressed', String(on));
+    },
+    remove: () => el.remove(),
+  };
 }
